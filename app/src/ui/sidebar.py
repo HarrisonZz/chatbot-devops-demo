@@ -10,8 +10,8 @@ class AvatarSelection:
 
 def render_sidebar(cfg: AppConfig) -> AvatarSelection:
     avatar_display_map = {
-        cfg.user_avatar_path: "🐱",
-        cfg.bot_avatar_path: "🤖",
+        cfg.user_avatar_url: "🐱",
+        cfg.bot_avatar_url: "🤖",
         "👤": "👤",
         "🧠": "🧠",
         "👨‍💼": "👨‍💼",
@@ -29,19 +29,18 @@ def render_sidebar(cfg: AppConfig) -> AvatarSelection:
 
         user_avatar = st.selectbox(
             "Choose User Avatar:",
-            options=[cfg.user_avatar_path, "👤", "👨‍💼", "🚀"],
+            options=[cfg.user_avatar_url, "👤", "👨‍💼", "🚀"],
             format_func=format_avatar_option,
             index=0,
         )
 
         bot_avatar = st.selectbox(
             "Choose Bot Avatar:",
-            options=[cfg.bot_avatar_path, "🧠", "🦄"],
+            options=[cfg.bot_avatar_url, "🧠", "🦄"],
             format_func=format_avatar_option,
             index=0,
         )
 
         st.markdown("---")
-        st.caption("Note: Put images in ./static/ and reference them in config.py")
 
     return AvatarSelection(user_avatar=user_avatar, bot_avatar=bot_avatar)
