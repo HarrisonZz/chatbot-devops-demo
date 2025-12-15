@@ -1,11 +1,12 @@
 import pulumi
-# 匯入我們寫好的模組 class
-from modules.s3_website import StaticWebsite
+from src.components.edge import StaticAssetsCdn
 
-# --- 使用模組 ---
-# 你只要一行指令，就完成了 bucket, policy, sync 所有動作
-chatbot_assets = StaticWebsite("ai-chatbot-demo", "../app/static")
+assets = StaticAssetsCdn(
+    "ai-chatbot-assets",
+    folder_path="../app/static",
+    tags={"app": "ai-chatbot", "env": pulumi.get_stack()},
+)
 
-# --- 輸出網址 ---
-# 直接從物件屬性拿網址
-pulumi.export("s3_website_url", chatbot_assets.website_url)
+pulumi.export("assets_base_url", assets.assets_base_url)
+pulumi.export("distribution_id", assets.distribution_id)
+pulumi.export("bucket_name", assets.bucket_name)
