@@ -1,0 +1,4 @@
+boto3==1.40.63
+botocore==1.40.63
+streamlit==1.52.1
+python-json-logger==4.0.0
