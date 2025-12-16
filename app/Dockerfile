@@ -17,7 +17,8 @@ COPY requirements.txt .
 RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
 
 # 3. 複製應用程式代碼
-COPY main.py .
+COPY app.py .
+COPY src/ ./src/
 
 # 4. 暴露 Streamlit 的預設 Port
 EXPOSE 8501
@@ -27,4 +28,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
 # 6. 啟動指令
-ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
