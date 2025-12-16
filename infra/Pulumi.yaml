@@ -1,4 +1,5 @@
 name: ai-chatbot-infra
 runtime:
   name: python
+main: src
 description: An AWS Python Pulumi project for AI Chatbot
