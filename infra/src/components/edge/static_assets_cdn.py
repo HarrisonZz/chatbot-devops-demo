@@ -14,6 +14,7 @@ class StaticAssetsCdn(pulumi.ComponentResource):
         name: str,
         folder_path: str,
         *,
+        web_acl_id: pulumi.Input[str] | None = None,
         default_root_object: str | None = None,
         force_destroy: bool = True,
         tags: dict[str, str] | None = None,
@@ -128,6 +129,7 @@ class StaticAssetsCdn(pulumi.ComponentResource):
                 "cloudfront_default_certificate": True,
             },
             tags=tags,
+            web_acl_id=web_acl_id,
             opts=pulumi.ResourceOptions(parent=self),
             logging_config=aws.cloudfront.DistributionLoggingConfigArgs(
                 bucket=self.log_bucket.bucket_domain_name,  # 類似 xxx.s3.amazonaws.com
