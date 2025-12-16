@@ -9,5 +9,6 @@ def configure_page(cfg: AppConfig) -> None:
 def render_header(cfg: AppConfig) -> None:
     load_css_link(cfg.css_url)
 
-    header_html = fetch_text(cfg.header_html_url)
-    st.markdown(header_html, unsafe_allow_html=True)
+    #header_html = fetch_text(cfg.header_html_url)
+    #st.markdown(header_html, unsafe_allow_html=True)
+    load_html_link(cfg.header_html_url)

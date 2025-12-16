@@ -1,16 +1,78 @@
-<div style="text-align: center; margin-bottom: 2rem;">
-    <h1
-        style="margin-bottom: 10px; font-size: 2.5rem; background: linear-gradient(135deg, #2C3E50 0%, #4b6cb7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-        🤖 Simple AI Chatbot
-    </h1>
-    <p style="color: #6c757d; font-size: 1rem; margin-bottom: 8px;">
-        SRE Assessment Demo: Generative AI Chatbot Lifecycle Management
-    </p>
-    <div style="font-size: 0.85em; color: #666; font-weight: 500;">
-        🏗️ Architecture:
-        <span
-            style="color: #d97706; font-weight: 700; background-color: #fff3e0; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffcc80;">
-            AWS Bedrock + ECS Fargate | Infra: Pulumi & Ansible
-        </span>
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple AI Chatbot</title>
+
+    <style>
+        /* 全站 emoji/font fallback（Chrome / Linux / Windows 都比較穩） */
+        :root {
+            --emoji-font: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+            --ui-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+        }
+
+        body {
+            font-family: var(--emoji-font), var(--ui-font);
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        /* 漸層只套在文字上，emoji 不吃透明裁切，避免「emoji 消失」 */
+        .gradient-text {
+            background: linear-gradient(135deg, #2C3E50 0%, #4b6cb7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .badge {
+            color: #d97706;
+            font-weight: 700;
+            background-color: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #ffcc80;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <h1>
+            <span style="margin-right: .4rem;">🤖</span>
+            <span class="gradient-text">Simple AI Chatbot</span>
+        </h1>
+
+        <p class="subtitle">
+            SRE Assessment Demo: Generative AI Chatbot Lifecycle Management
+        </p>
+
+        <div class="meta">
+            <span style="margin-right: .25rem;">🏗️</span> Architecture:
+            <span class="badge">AWS Bedrock + ECS Fargate | Infra: Pulumi &amp; Ansible</span>
+        </div>
     </div>
-</div>
+</body>
+
+</html>
