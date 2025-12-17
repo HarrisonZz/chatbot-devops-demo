@@ -1,0 +1,34 @@
+---
+- name: Check Helm existence
+  command: helm version
+  register: helm_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Helm
+  block:
+    - name: Create temporary directory
+      tempfile:
+        state: directory
+      register: temp_helm_dir
+
+    - name: Download Helm tarball
+      get_url:
+        url: "https://get.helm.sh/helm-{{ helm_version }}-linux-{{ arch }}.tar.gz"
+        dest: "{{ temp_helm_dir.path }}/helm.tar.gz"
+
+    - name: Extract Helm
+      unarchive:
+        src: "{{ temp_helm_dir.path }}/helm.tar.gz"
+        dest: "{{ temp_helm_dir.path }}"
+        remote_src: yes
+
+    - name: Move Helm binary to path
+      copy:
+        src: "{{ temp_helm_dir.path }}/linux-{{ arch }}/helm"
+        dest: /usr/local/bin/helm
+        mode: '0755'
+        remote_src: yes
+      become: yes
+
+  when: helm_check.rc != 0

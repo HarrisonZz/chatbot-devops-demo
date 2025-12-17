@@ -1,0 +1,6 @@
+- name: Destroy stack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - pulumi_stack

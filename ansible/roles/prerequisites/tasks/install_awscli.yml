@@ -1,0 +1,29 @@
+---
+- name: Check if AWS CLI is installed
+  command: aws --version
+  register: aws_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Download and install AWS CLI v2
+  block:
+    - name: Download AWS CLI bundle
+      get_url:
+        url: "{{ awscli_url }}"
+        dest: "/tmp/awscliv2.zip"
+
+    - name: Unzip AWS CLI bundle
+      unarchive:
+        src: "/tmp/awscliv2.zip"
+        dest: "/tmp"
+        remote_src: yes
+
+    - name: Run AWS CLI installer
+      command: "/tmp/aws/install --update"
+      become: yes
+      
+    - name: Clean up AWS CLI installer
+      file:
+        path: "/tmp/aws"
+        state: absent
+  when: aws_check.rc != 0 # 只有當 aws 指令不存在或錯誤時才執行

@@ -1,0 +1,18 @@
+---
+
+- name: Check kubectl version
+  command: kubectl version --client
+  register: kubectl_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Download and install kubectl
+  block:
+    - name: Download kubectl binary
+      get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/{{ arch }}/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755' # 直接賦予執行權限
+      become: yes
+  # 如果 kubectl 不存在，或者版本不對 (這裡簡化為只檢查是否存在，嚴謹的話可以用 version compare)
+  when: kubectl_check.rc != 0

@@ -1,0 +1,19 @@
+---
+
+- name: Install system dependencies
+  apt:
+    name:
+      - curl
+      - unzip
+      - tar
+      - gzip
+    state: present
+    update_cache: yes
+  become: yes
+  when: ansible_os_family == 'Debian' # 針對 Ubuntu/Debian
+
+- include_tasks: install_awscli.yml
+- include_tasks: install_kubectl.yml
+- include_tasks: install_helm.yml
+- include_tasks: install_pulumi.yml
+- include_tasks: verify.yml

@@ -1,0 +1,12 @@
+prereq_mode: install
+
+aws_region: ap-northeast-1
+pulumi_stack: dev
+pulumi_workdir: "{{ playbook_dir }}/../../infra"
+
+tool_versions:
+  pulumi: "3.212.0"
+  kubectl: "1.32.4"
+  awscli: "2.32.16"
+  helm: "3.19.2"
+

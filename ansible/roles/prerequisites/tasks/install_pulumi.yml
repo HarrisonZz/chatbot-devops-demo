@@ -1,0 +1,33 @@
+---
+- name: Check Pulumi existence
+  command: pulumi version
+  register: pulumi_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Pulumi
+  block:
+    - name: Download Pulumi install script
+      get_url:
+        url: https://get.pulumi.com
+        dest: /tmp/install-pulumi.sh
+        mode: '0755'
+
+    - name: Run Pulumi install script
+      command: /tmp/install-pulumi.sh --no-edit-path
+
+    # 將 Pulumi 從 user home 移動到 /usr/local/bin 方便全域呼叫
+    - name: Move Pulumi to /usr/local/bin
+      copy:
+        src: "{{ ansible_env.HOME }}/.pulumi/bin/pulumi"
+        dest: /usr/local/bin/pulumi
+        mode: '0755'
+        remote_src: yes
+      become: yes
+      
+    # 複製其他的 Pulumi 相關 binary (語言插件等)
+    - name: Copy Pulumi libraries
+      shell: "cp -r {{ ansible_env.HOME }}/.pulumi/bin/* /usr/local/bin/"
+      become: yes
+      
+  when: pulumi_check.rc != 0

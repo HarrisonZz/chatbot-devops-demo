@@ -1,0 +1,26 @@
+prereq_mode: install
+
+# 平台（先支援 Debian/Ubuntu/WSL）
+prereq_supported_families:
+  - Debian
+
+awscli_url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+kubectl_version: "1.32.4"
+helm_version: "3.19.2"     
+pulumi_version: "3.212.0"   
+arch: "amd64"
+
+awscli_install: true
+
+# 需要的基礎套件
+base_packages:
+  - ca-certificates
+  - curl
+  - unzip
+  - tar
+  - gzip
+  - git
+  - jq
+  - python3
+  - python3-venv
+  - python3-pip

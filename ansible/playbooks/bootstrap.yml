@@ -1,0 +1,8 @@
+---
+- name: Bootstrap Environment Tools
+  hosts: localhost
+  connection: local
+  gather_facts: yes  # 需要 gather_facts 來判斷 OS 類型 (Debian/RedHat)
+
+  roles:
+    - role: prerequisites

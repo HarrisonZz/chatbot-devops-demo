@@ -1,0 +1,26 @@
+---
+- name: Verify tool versions
+  block:
+    - name: Check AWS CLI version
+      command: aws --version
+      register: v_aws
+    
+    - name: Check Kubectl version
+      command: kubectl version --client
+      register: v_k8s
+      
+    - name: Check Helm version
+      command: helm version --short
+      register: v_helm
+
+    - name: Check Pulumi version
+      command: pulumi version
+      register: v_pulumi
+
+    - name: Print Versions
+      debug:
+        msg:
+          - "AWS CLI: {{ v_aws.stdout }}"
+          - "Kubectl: {{ v_k8s.stdout }}"
+          - "Helm:    {{ v_helm.stdout }}"
+          - "Pulumi:  {{ v_pulumi.stdout }}"

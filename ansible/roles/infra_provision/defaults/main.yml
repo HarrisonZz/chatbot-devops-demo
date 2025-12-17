@@ -1,0 +1,27 @@
+pulumi_workdir: "{{ playbook_dir }}/../../infra"
+
+# stack 名稱（dev/prod）
+pulumi_stack: dev
+
+# up | destroy
+pulumi_action: up
+
+# backend（不一定要設定；若用 Pulumi Cloud 可留空）
+pulumi_backend_url: ""
+
+# 安全性：destroy 需要顯式允許，避免一個手滑砍光
+pulumi_allow_destroy: false
+
+# 是否先跑 preview（最佳實踐：預設 true，讓 demo/審查更有說服力）
+pulumi_run_preview: true
+
+# preview 是否顯示 diff（視需求）
+pulumi_preview_diff: true
+
+# Pulumi up 是否跳過 preview（因為我們已先 preview，所以 up 可以 skip-preview）
+pulumi_up_skip_preview: true
+
+# 可選：用 venv 鎖 Python 依賴（讓 Pulumi Python 可重現）
+pulumi_use_venv: true
+pulumi_venv_path: ".venv"
+pulumi_requirements: "requirements.txt"
