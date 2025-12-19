@@ -2,10 +2,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 import pulumi_tls as tls
-
+import json
 import pulumi
 import pulumi_aws as aws
-
+from pulumi import ComponentResource, ResourceOptions
 
 @dataclass(frozen=True)
 class EksArgs:
@@ -112,10 +112,10 @@ class EksCluster(pulumi.ComponentResource):
         )
 
         # 6) OIDC Provider（IRSA 必備）
-        cluster_info = aws.eks.get_cluster_output(name=cluster.name)
 
-        oidc_issuer = cluster_info.identity.apply(lambda ident: ident["oidc"]["issuer"])
-        
+        oidc_issuer = cluster.identities.apply(
+            lambda ids: ids[0].oidcs[0].issuer if ids and ids[0].oidcs else None
+        )        
         # 只有在 issuer 存在時才嘗試建立 OpenIdConnectProvider 資源
         oidc_cert = tls.get_certificate_output(url=oidc_issuer)
 
@@ -163,6 +163,7 @@ class EksCluster(pulumi.ComponentResource):
         self.cluster_name = cluster.name
         self.cluster_arn = cluster.arn
         self.nodegroup_name = ng.node_group_name
+        self.oidc_provider_url = oidc.url
         self.oidc_provider_arn = oidc.arn
         self.kubeconfig = pulumi.Output.secret(kubeconfig)
 
@@ -173,3 +174,66 @@ class EksCluster(pulumi.ComponentResource):
             "oidcProviderArn": self.oidc_provider_arn,
             "kubeconfig": self.kubeconfig,
         })
+
+    def create_irsa_role(self, role_name_prefix: str, namespace: str, service_account_name: str, policy_json: str):
+        """
+        建立一個綁定特定 K8s ServiceAccount 的 IAM Role
+        """
+        # 建立 Trust Policy
+        assume_role_policy = pulumi.Output.all(self.oidc_provider_url, self.oidc_provider_arn).apply(
+            lambda args: json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Principal": {"Federated": args[1]},
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            f"{args[0].replace('https://', '')}:sub": f"system:serviceaccount:{namespace}:{service_account_name}",
+                            f"{args[0].replace('https://', '')}:aud": "sts.amazonaws.com"
+                        }
+                    }
+                }]
+            })
+        )
+
+        role = aws.iam.Role(f"{self._name}-{role_name_prefix}",
+            assume_role_policy=assume_role_policy,
+            tags={"ManagedBy": "Pulumi", "Component": "EksCluster"},
+            opts=ResourceOptions(parent=self)
+        )
+
+        policy = aws.iam.Policy(f"{self._name}-{role_name_prefix}-policy",
+            policy=policy_json,
+            opts=ResourceOptions(parent=self)
+        )
+
+        aws.iam.RolePolicyAttachment(f"{self._name}-{role_name_prefix}-attach",
+            role=role.name,
+            policy_arn=policy.arn,
+            opts=ResourceOptions(parent=self)
+        )
+
+        return role.arn
+
+    # --------------------------------------------------------------------------
+    # 方法 B: 封裝好的 ESO 啟用功能 (高階 API)
+    # --------------------------------------------------------------------------
+    def enable_external_secrets(self, namespace="external-secrets", sa_name="external-secrets-sa", ssm_path_prefix="/ai-chatbot/*"):
+        """
+        專門為 External Secrets Operator 建立權限
+        """
+        policy_doc = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "ssm:GetParameter",
+                    "ssm:GetParameters",
+                    "ssm:GetParametersByPath"
+                ],
+                "Resource": f"arn:aws:ssm:*:*:parameter{ssm_path_prefix}"
+            }]
+        })
+
+        return self.create_irsa_role("eso-role", namespace, sa_name, policy_doc)

@@ -61,16 +61,16 @@ class StaticAssetsCdn(pulumi.ComponentResource):
         )
 
         # 2) Upload local folder to S3 (private objects)
-        synced_folder.S3BucketFolder(
-            f"{name}-sync",
-            path=folder_path,
-            bucket_name=self.bucket.bucket,
-            acl="private",
-            opts=pulumi.ResourceOptions(
-                parent=self,
-                depends_on=[ownership_controls, public_access_block],
-            ),
-        )
+        # synced_folder.S3BucketFolder(
+        #     f"{name}-sync",
+        #     path=folder_path,
+        #     bucket_name=self.bucket.bucket,
+        #     acl="private",
+        #     opts=pulumi.ResourceOptions(
+        #         parent=self,
+        #         depends_on=[ownership_controls, public_access_block],
+        #     ),
+        # )
 
         # 3) CloudFront Origin Access Control (OAC)
         self.oac = aws.cloudfront.OriginAccessControl(

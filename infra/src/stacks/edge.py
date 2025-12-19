@@ -1,6 +1,7 @@
 import pulumi
 from components.edge import StaticAssetsCdn, CdnWaf
 from pathlib import Path
+import pulumi_aws as aws
 
 def deploy(env: str):
 
@@ -22,7 +23,20 @@ def deploy(env: str):
         opts=pulumi.ResourceOptions(protect=protect),
     )
 
-    pulumi.export("assets_base_url", assets.assets_base_url)
+    param = aws.ssm.Parameter(
+        f"cloudfrontUrlParam-{env}",
+        name=f"/ai-chatbot/{env}/cloudfront_url",
+        type="String",         # 不是機密就 String；機密用 SecureString
+        value=assets.assets_base_url,
+        tags={"app": "ai-chatbot", "env": env},
+            opts=pulumi.ResourceOptions(
+            protect=protect,                   # 需要的話一起保護
+            depends_on=[assets],               # 明確依賴（保守但穩）
+        ),
+    )
+
+    pulumi.export("cloudfront_url_param", param.name)
+    pulumi.export("cloudfront_url", param.value)
     pulumi.export("distribution_id", assets.distribution_id)
     pulumi.export("bucket_name", assets.bucket_name)
     pulumi.export("waf_web_acl_arn", waf.web_acl_arn)
