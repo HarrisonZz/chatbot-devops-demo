@@ -5,7 +5,7 @@ import pulumi_tls as tls
 import json
 import pulumi
 import pulumi_aws as aws
-import pulumi_kubernetes as k8s # 👈 記得加這行
+import pulumi_kubernetes as k8s
 from pulumi import ComponentResource, ResourceOptions
 
 
@@ -168,6 +168,7 @@ class EksCluster(pulumi.ComponentResource):
         self.oidc_provider_url = oidc.url
         self.oidc_provider_arn = oidc.arn
         self.kubeconfig = pulumi.Output.secret(kubeconfig)
+        self.vpc_id = args.vpc_id
 
         self.register_outputs({
             "clusterName": self.cluster_name,
@@ -254,7 +255,7 @@ class EksCluster(pulumi.ComponentResource):
                         }
                     },
                     "region": aws.get_region().name,
-                    "vpcId": args.vpc_id,
+                    "vpcId": self.vpc_id,
                 }
             ),
             opts=ResourceOptions(parent=self, provider=self.k8s_provider)
