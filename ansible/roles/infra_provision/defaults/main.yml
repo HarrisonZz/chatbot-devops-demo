@@ -1,27 +1,43 @@
+---
+
+# --- 路徑設定 ---
 pulumi_workdir: "{{ playbook_dir }}/../../infra"
+pulumi_use_venv: true
+pulumi_venv_name: ".venv"
+pulumi_requirements: "requirements.txt"
+pulumi_venv_bin: "{{ pulumi_workdir }}/{{ pulumi_venv_name }}/bin"
 
-# stack 名稱（dev/prod）
-pulumi_stack: dev
+pulumi_project_list:
+  - registry
+  - edge
+  - network
+  - eks
 
-# up | destroy
+# --- 核心設定 ---
 pulumi_action: up
-
-# backend（不一定要設定；若用 Pulumi Cloud 可留空）
 pulumi_backend_url: ""
+pulumi_access_token: ""
 
-# 安全性：destroy 需要顯式允許，避免一個手滑砍光
+# --- 行為控制 ---
+pulumi_run_preview: true
+pulumi_up_skip_preview: true
 pulumi_allow_destroy: false
 
-# 是否先跑 preview（最佳實踐：預設 true，讓 demo/審查更有說服力）
-pulumi_run_preview: true
+aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
 
-# preview 是否顯示 diff（視需求）
-pulumi_preview_diff: true
-
-# Pulumi up 是否跳過 preview（因為我們已先 preview，所以 up 可以 skip-preview）
-pulumi_up_skip_preview: true
-
-# 可選：用 venv 鎖 Python 依賴（讓 Pulumi Python 可重現）
-pulumi_use_venv: true
-pulumi_venv_path: ".venv"
-pulumi_requirements: "requirements.txt"
+pulumi_env:
+  HOME: "{{ lookup('env', 'HOME') }}"
+  # 1. 權限：明確傳入 Token
+  PULUMI_ACCESS_TOKEN: "{{ pulumi_access_token }}"
+  
+  # 2. 路徑：明確將 Venv 放在最前，並使用 lookup 抓取本機 PATH
+  PATH: "{{ pulumi_venv_bin }}:{{ lookup('env', 'PATH') }}"
+  
+  # 3. AWS：明確指定 Profile
+  AWS_PROFILE: "{{ aws_profile }}"
+  
+  # 4. [SRE 關鍵] 強制指定 Python Command，完全消除 "用錯 Python" 的風險
+  PULUMI_PYTHON_CMD: "{{ pulumi_venv_bin }}/python"
+  
+  # 5. 優化：讓 Log 即時輸出，不要緩衝 (方便 Debug)
+  PYTHONUNBUFFERED: "1"

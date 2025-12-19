@@ -1,0 +1,23 @@
+- name: Setup Python venv for Pulumi (optional)
+  ansible.builtin.include_tasks: venv.yml
+  when: pulumi_use_venv
+
+- name: Pulumi login (optional)
+  ansible.builtin.include_tasks: login.yml
+
+- name: "Process Pulumi Stacks Serial Flow"
+  ansible.builtin.include_tasks: deploy_stack.yml
+  # 這裡用完整的清單，不需要過濾任何東西
+  loop: "{{ pulumi_project_list | reverse if pulumi_action == 'destroy' else pulumi_project_list }}"
+  loop_control:
+    loop_var: current_project
+  vars:
+    current_stack_full_name: "{{ current_project }}-{{ pulumi_stack }}"
+
+- name: Read Pulumi kubeconfig
+  ansible.builtin.include_tasks: get_kubeconfig.yml
+  vars:
+    current_stack_full_name: "eks-{{ pulumi_stack }}"
+  when: 
+    - pulumi_action == "up"
+    - "'eks' in pulumi_project_list"

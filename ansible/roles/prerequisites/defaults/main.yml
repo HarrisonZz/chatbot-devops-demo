@@ -5,7 +5,7 @@ prereq_supported_families:
   - Debian
 
 awscli_url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-kubectl_version: "1.32.4"
+kubectl_version: "1.32.2"
 helm_version: "3.19.2"     
 pulumi_version: "3.212.0"   
 arch: "amd64"

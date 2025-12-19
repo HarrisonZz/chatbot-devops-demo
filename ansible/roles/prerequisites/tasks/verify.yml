@@ -1,26 +1,80 @@
----
 - name: Verify tool versions
   block:
+    # ------------------------------------------------------------------
+    # 1. AWS CLI
+    # ------------------------------------------------------------------
     - name: Check AWS CLI version
-      command: aws --version
+      ansible.builtin.command: aws --version
       register: v_aws
-    
-    - name: Check Kubectl version
-      command: kubectl version --client
-      register: v_k8s
-      
+      changed_when: false
+      failed_when: v_aws.rc != 0
+
+    # ------------------------------------------------------------------
+    # 2. Kubectl (JSON 解析 + 警告模式)
+    # ------------------------------------------------------------------
+    - name: Check kubectl version
+      ansible.builtin.command: kubectl version --client -o json
+      register: kubectl_check
+      changed_when: false
+      failed_when: kubectl_check.rc != 0
+
+    - name: "[WARNING] Kubectl version mismatch"
+      ansible.builtin.debug:
+        msg: "Found: {{ current_ver }}, Expected: v{{ kubectl_version }}"
+      vars:
+        current_ver: "{{ (kubectl_check.stdout | from_json).clientVersion.gitVersion }}"
+      when: current_ver != "v" + kubectl_version
+
+    # ------------------------------------------------------------------
+    # 3. Helm (去除 +gXXXX 雜訊 + 警告模式)
+    # ------------------------------------------------------------------
     - name: Check Helm version
-      command: helm version --short
+      ansible.builtin.command: helm version --short
       register: v_helm
+      changed_when: false
+      failed_when: v_helm.rc != 0
 
+    - name: "[WARNING] Helm version mismatch"
+      ansible.builtin.debug:
+        msg: "Found: {{ current_ver }}, Expected: v{{ helm_version }}"
+      vars:
+        # 使用 split('+')[0] 去除 Metadata
+        current_ver: "{{ v_helm.stdout.split('+')[0] }}"
+      when: current_ver != "v" + helm_version
+
+    # ------------------------------------------------------------------
+    # 4. Pulumi (警告模式)
+    # ------------------------------------------------------------------
     - name: Check Pulumi version
-      command: pulumi version
+      ansible.builtin.command: pulumi version
       register: v_pulumi
+      changed_when: false
+      failed_when: v_pulumi.rc != 0
 
-    - name: Print Versions
-      debug:
+    - name: "[WARNING] Pulumi version mismatch"
+      ansible.builtin.debug:
+        msg: "Found: {{ current_ver }}, Expected: v{{ pulumi_version }}"
+      vars:
+        current_ver: "{{ v_pulumi.stdout | trim }}"
+      # 這裡判斷 current_ver 是否包含 "v" + pulumi_version
+      when: ("v" + pulumi_version) not in current_ver
+
+    # ------------------------------------------------------------------
+    # 5. Python Venv (這必須嚴格檢查，否則後面會壞)
+    # ------------------------------------------------------------------
+    - name: Verify python venv module
+      ansible.builtin.command: python3 -c "import venv"
+      register: venv_check
+      changed_when: false
+      failed_when: venv_check.rc != 0
+
+    # ------------------------------------------------------------------
+    # 6. 總結報告
+    # ------------------------------------------------------------------
+    - name: Print versions summary
+      ansible.builtin.debug:
         msg:
-          - "AWS CLI: {{ v_aws.stdout }}"
-          - "Kubectl: {{ v_k8s.stdout }}"
-          - "Helm:    {{ v_helm.stdout }}"
-          - "Pulumi:  {{ v_pulumi.stdout }}"
+          - "AWS CLI: {{ v_aws.stdout | default(v_aws.stderr, true) | trim }}"
+          - "kubectl: {{ (kubectl_check.stdout | from_json).clientVersion.gitVersion }}"
+          - "helm:    {{ v_helm.stdout | trim }}"
+          - "pulumi:  {{ v_pulumi.stdout | trim }}"

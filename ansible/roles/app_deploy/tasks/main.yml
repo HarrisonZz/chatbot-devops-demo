@@ -1,0 +1,26 @@
+---
+- name: Bootstrap Python Environment
+  ansible.builtin.include_tasks: bootstrap_env.yml
+  tags: [always] # 加上 always 標籤，確保不管跑什麼 tag 都會檢查依賴
+
+- name: Preflight (connectivity & cluster readiness)
+  when: preflight_enabled | bool
+  ansible.builtin.import_tasks: preflight.yml
+  tags: [preflight]
+
+- name: Fetch Infrastructure Facts (Pulumi Outputs)
+  ansible.builtin.import_tasks: fetch_facts.yml
+  tags: [facts, install]
+
+- name: Install controllers (ArgoCD/ESO/Reloader)
+  ansible.builtin.import_tasks: install.yml
+  tags: [install]
+
+# - name: Configure ESO stores & externalsecrets
+#   ansible.builtin.import_tasks: configure.yml
+#   tags: [configure]
+
+# - name: Verify end-to-end
+#   when: verify_enabled | bool
+#   ansible.builtin.import_tasks: verify.yml
+#   tags: [verify]

@@ -1,0 +1,50 @@
+---
+
+- name: "Current Stack: {{ current_stack_full_name }}"
+  ansible.builtin.debug:
+    msg: "Selecting stack [{{ current_stack_full_name }}] for action [{{ pulumi_action }}]"
+
+- name: Select or Create Pulumi Stack [{{ current_stack_full_name }}]
+  ansible.builtin.command: >-
+    pulumi stack select {{ current_stack_full_name }} --create
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  environment: "{{ pulumi_env }}"
+  changed_when: false # 只是切換環境，不視為改變狀態
+
+- name: "Run Pulumi Preview {{ current_stack_full_name }}"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    pulumi preview --stack {{ current_stack_full_name | default(pulumi_stack) }} --diff 2>&1 | tee {{ pulumi_preview_log }}
+  args:
+    chdir: "{{ pulumi_workdir }}"
+    executable: /bin/bash
+  environment: "{{ pulumi_env }}"
+  register: preview_output
+  changed_when: false
+#  no_log: true
+  when: 
+    - pulumi_run_preview | bool
+    - pulumi_action != 'destroy'
+
+# 2. 顯示結果
+- name: Show Preview Result
+  ansible.builtin.debug:
+    var: preview_output.stdout_lines
+  when: preview_output.stdout_lines is defined
+
+- name: Up [{{ current_stack_full_name }}]
+  ansible.builtin.command: >-
+    pulumi up --stack {{ current_stack_full_name }} --yes --skip-preview
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  environment: "{{ pulumi_env }}"
+  when: pulumi_action == 'up'
+
+- name: Destroy [{{ current_stack_full_name }}]
+  ansible.builtin.command: >-
+    pulumi destroy --stack {{ current_stack_full_name }} --yes
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  environment: "{{ pulumi_env }}"
+  when: pulumi_action == 'destroy'

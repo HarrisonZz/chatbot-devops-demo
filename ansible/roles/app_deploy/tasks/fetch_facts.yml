@@ -1,0 +1,32 @@
+---
+- name: Determine EKS Stack Name
+  ansible.builtin.set_fact:
+    # 這裡假設您的 Stack 命名規則是 "eks-{env}"
+    # 您也可以根據 defaults/main.yml 調整
+    target_eks_stack: "eks-{{ pulumi_stack | default('dev') }}"
+
+- name: Fetch Pulumi Stack Outputs (EKS)
+  ansible.builtin.command: >-
+    pulumi stack output --json --stack {{ target_eks_stack }}
+  args:
+    chdir: "{{ pulumi_workdir }}" # 記得在 vars 中定義 pulumi 的路徑
+  register: eks_stack_output
+  changed_when: false
+  # 加上環境變數確保能連到 Pulumi Backend
+  environment: "{{ pulumi_env }}"
+
+- name: Parse and Set Facts
+  ansible.builtin.set_fact:
+    eks_outputs: "{{ eks_stack_output.stdout | from_json }}"
+
+- name: Set Infra Variables (Global Facts)
+  ansible.builtin.set_fact:
+    # 這裡抓出來的變數，後面的 install.yml 和 configure.yml 都能用
+    eso_irsa_role_arn: "{{ (eks_stack_output.stdout | from_json).eso_role_arn | default('') }}"
+    eks_cluster_name: "{{ (eks_stack_output.stdout | from_json).clusterName }}"
+    
+- name: Debug Infra Info
+  ansible.builtin.debug:
+    msg: 
+      - "EKS Cluster: {{ eks_cluster_name }}"
+      - "ESO Role ARN: {{ eso_irsa_role_arn }}"

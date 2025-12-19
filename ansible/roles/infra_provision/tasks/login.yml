@@ -1,0 +1,32 @@
+---
+# 1. 檢查 AWS 權限 (Fail Fast 機制)
+- name: Check AWS Identity (Fail Fast)
+  ansible.builtin.command: aws sts get-caller-identity
+  register: aws_identity
+  changed_when: false
+  environment: "{{ pulumi_env }}"
+  failed_when: aws_identity.rc != 0
+
+# 2. 登入 Pulumi Backend
+- name: Login to Pulumi Backend
+  ansible.builtin.command: >
+    pulumi login
+    {% if pulumi_backend_url | default('') | length > 0 %} {{ pulumi_backend_url }} {% endif %}
+  environment: "{{ pulumi_env }}"
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  changed_when: false
+#  no_log: true
+
+# 3. 驗證 Pulumi 登入狀態
+- name: Verify Pulumi Backend Connection (WhoAmI)
+  ansible.builtin.command: pulumi whoami -v
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  environment: "{{ pulumi_env }}"
+  register: pulumi_whoami
+  changed_when: false
+
+- name: Show Current Backend Info
+  ansible.builtin.debug:
+    msg: "{{ pulumi_whoami.stdout_lines }}"

@@ -1,19 +1,28 @@
 ---
 
-- name: Install system dependencies
-  apt:
-    name:
-      - curl
-      - unzip
-      - tar
-      - gzip
-    state: present
-    update_cache: yes
-  become: yes
-  when: ansible_os_family == 'Debian' # 針對 Ubuntu/Debian
+- name: Install base packages
+  ansible.builtin.include_tasks: install_package.yml
+  when: prereq_mode == "install"
 
-- include_tasks: install_awscli.yml
-- include_tasks: install_kubectl.yml
-- include_tasks: install_helm.yml
-- include_tasks: install_pulumi.yml
-- include_tasks: verify.yml
+# kubectl (pinned)
+- name: Install kubectl
+  ansible.builtin.include_tasks: install_kubectl.yml
+  when: prereq_mode == "install"
+
+# helm (pinned)
+- name: Install helm
+  ansible.builtin.include_tasks: install_helm.yml
+  when: prereq_mode == "install"
+
+# pulumi (pinned)
+- name: Install pulumi
+  ansible.builtin.include_tasks: install_pulumi.yml
+  when: prereq_mode == "install"
+
+# awscli v2 (latest)
+- name: Install awscli v2
+  ansible.builtin.include_tasks: install_awscli.yml
+  when: prereq_mode == "install" and awscli_install
+
+- name: Verify prerequisites
+  ansible.builtin.include_tasks: verify.yml

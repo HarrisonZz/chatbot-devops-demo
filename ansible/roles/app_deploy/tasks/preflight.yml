@@ -1,0 +1,66 @@
+---
+
+- name: Check kubeconfig path exists
+  ansible.builtin.stat:
+    path: "{{ kubeconfig | expanduser }}"
+  register: kubeconfig_stat
+
+- name: Fail if kubeconfig not found
+  ansible.builtin.fail:
+    msg: "❌ kubeconfig not found at: {{ kubeconfig }}"
+  when: not kubeconfig_stat.stat.exists
+
+# --- [來自版本 B 的精華：預先 DNS 檢查] ---
+- name: Extract server host from kubeconfig (for DNS check)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig {{ kubeconfig | expanduser }}
+    config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+  register: k8s_server
+  changed_when: false
+  failed_when: false # 容錯，如果這步失敗就讓後面的連線檢查去擋
+
+- name: DNS resolve check
+  ansible.builtin.command: "getent hosts {{ k8s_server.stdout | regex_replace('^https?://', '') | regex_replace(':.*$', '') }}"
+  register: dns_check
+  changed_when: false
+  when: k8s_server.rc == 0
+  ignore_errors: true
+
+- name: Warn if DNS fails
+  ansible.builtin.fail:
+    msg: "❌ DNS Resolution Failed! Your WSL2 cannot resolve EKS endpoint. Please fix /etc/resolv.conf."
+  when: 
+    - k8s_server.rc == 0
+    - dns_check.rc != 0
+# ---------------------------------------------
+
+# --- [來自版本 A 的精華：精準連線與計數] ---
+- name: Query cluster nodes
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig }}"
+    context: "{{ kubecontext | default(omit, true) }}"
+    api_version: v1
+    kind: Node
+  register: k8s_nodes
+  ignore_errors: true
+
+- name: Verify API Connectivity
+  ansible.builtin.fail:
+    msg: "❌ Failed to connect to EKS API. DNS is fine, so check your IAM Role or Network."
+  when: k8s_nodes.failed | default(false)
+
+- name: Count Ready nodes (Strict Check)
+  ansible.builtin.set_fact:
+    ready_nodes: >-
+      {{
+        k8s_nodes.resources | default([]) |
+        json_query("[?status.conditions[?type=='Ready' && status=='True']]") |
+        length
+      }}
+
+- name: Enforce minimum Ready nodes
+  ansible.builtin.assert:
+    that:
+      - (not require_nodes_ready) or (ready_nodes | int >= min_ready_nodes | int)
+    fail_msg: "❌ EKS reachable but insufficient Ready nodes. Found: {{ ready_nodes }}, Required: {{ min_ready_nodes }}"
+    success_msg: "✅ Preflight Passed: {{ ready_nodes }} nodes are Ready."

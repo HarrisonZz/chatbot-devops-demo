@@ -1,0 +1,144 @@
+- name: Validate required vars
+  ansible.builtin.assert:
+    that:
+      - (not eso_enabled) or (eso_irsa_role_arn | length > 0)
+    fail_msg: "❌ eso_irsa_role_arn is required when eso_enabled=true. Did fetch_facts.yml run successfully?"
+
+- name: Add Helm Repositories
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  loop:
+    - { name: argo, url: "https://argoproj.github.io/argo-helm" }
+    - { name: external-secrets, url: "https://charts.external-secrets.io" }
+    - { name: stakater, url: "https://stakater.github.io/stakater-charts" }
+
+- name: Update Kubeconfig with Specific Profile
+  ansible.builtin.command: >-
+    aws eks update-kubeconfig 
+    --name {{ eks_cluster_name }} 
+    --region {{ aws_region }}
+    --kubeconfig {{ kubeconfig | expanduser }}
+  environment: "{{ pulumi_env | default({}) }}"
+  vars:
+    # 確保這裡使用系統的 AWS CLI，不受 Python 環境影響
+    ansible_python_interpreter: "/usr/bin/python3" 
+  when: update_kubeconfig | default(true)
+
+- name: Ensure namespaces exist
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig | expanduser }}"
+    context: "{{ kubecontext | default(omit, true) }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ item }}"
+  environment: "{{ pulumi_env | default({}) }}"
+  loop:
+    - "{{ argocd_namespace }}"
+    - "{{ eso_namespace }}"
+    - "{{ reloader_namespace }}"
+
+- name: Add Argo Helm repo
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: https://argoproj.github.io/argo-helm
+    state: present
+  # ⚠️ 很重要：避免你其他 task 有 become 造成 repo 加到不同 HOME
+  become: false
+
+- name: Update Helm repo cache
+  ansible.builtin.command: /usr/sbin/helm repo update
+  changed_when: false
+  become: false
+
+- name: Install ArgoCD
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig }}"
+    name: argocd
+    chart_ref: argo/argo-cd
+    release_namespace: "{{ argocd_namespace }}"
+    chart_version: "{{ argocd_chart_version | default('9.1.7') }}"
+    update_repo_cache: yes
+    values:
+      # 資源優化：開發環境關閉 HA
+      redis-ha:
+        enabled: "{{ argocd_ha_enabled | default(false) }}"
+      controller:
+        replicas: "{{ 1 if not (argocd_ha_enabled | default(false)) else 2 }}"
+      repoServer:
+        replicas: "{{ 1 if not (argocd_ha_enabled | default(false)) else 2 }}"
+      applicationSet:
+        replicas: "{{ 1 if not (argocd_ha_enabled | default(false)) else 2 }}"
+      
+      # 網路設定：直接開 LoadBalancer 方便連線
+      server:
+        service:
+          type: "{{ argocd_service_type | default('LoadBalancer') }}"
+        # 禁止 Helm 安裝時自帶的 Ingress，避免跟我們自己的 Ingress Controller 打架
+        ingress:
+          enabled: false
+  environment: "{{ pulumi_env | default({}) }}"
+  when: argocd_enabled | default(true)
+
+- name: Add External Secrets Helm repo
+  kubernetes.core.helm_repository:
+    name: external-secrets
+    repo_url: https://charts.external-secrets.io
+    state: present
+  become: false
+
+- name: Update Helm repo cache
+  ansible.builtin.command: /usr/sbin/helm repo update
+  changed_when: false
+  become: false
+
+- name: Install External Secrets Operator
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig | expanduser }}"
+    name: external-secrets
+    chart_ref: external-secrets/external-secrets
+    release_namespace: "{{ eso_namespace }}"
+    chart_version: "{{ eso_chart_version | default('1.1.0') }}"
+    values:
+      installCRDs: true # 重要：自動安裝 CRD
+      serviceAccount:
+        create: true
+        name: "{{ eso_service_account | default('external-secrets-sa') }}"
+        # 🚨 關鍵：注入 AWS IRSA Role ARN
+        # 這讓 ESO Pod 有權限去讀取 AWS Systems Manager (SSM)
+        annotations:
+          eks.amazonaws.com/role-arn: "{{ eso_irsa_role_arn }}"
+      
+      # 讓 Webhook 也跑在 host network 避免一些 CNI 延遲問題 (可選)
+      webhook:
+        hostNetwork: false
+  environment: "{{ pulumi_env | default({}) }}"
+  when: eso_enabled | default(true)
+
+- name: Add Stakater Helm repo
+  kubernetes.core.helm_repository:
+    name: "{{ reloader_repo_name | default('stakater') }}"
+    repo_url: "{{ reloader_repo_url | default('https://stakater.github.io/stakater-charts') }}"
+    state: present
+  become: false
+
+- name: Update Helm repo cache
+  ansible.builtin.command: /usr/sbin/helm repo update
+  changed_when: false
+  become: false
+
+- name: Install Reloader
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig | expanduser }}"
+    name: reloader
+    chart_ref: stakater/reloader
+    release_namespace: "{{ reloader_namespace }}" # 通常放在工具類 namespace
+    values:
+      # 讓它監控所有 Namespaces 裡的 ConfigMap/Secret 變更
+      reloader:
+        watchGlobally: true
+  environment: "{{ pulumi_env | default({}) }}"
+  when: reloader_enabled | default(true)

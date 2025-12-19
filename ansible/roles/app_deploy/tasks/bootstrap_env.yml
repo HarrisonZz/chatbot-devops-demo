@@ -1,0 +1,19 @@
+---
+- name: Ensure pip is installed
+  ansible.builtin.package:
+    name:
+      - python3-pip
+    state: present
+  become: true # 這通常需要 sudo 權限，如果您在 WSL 可能不需要或已是 root
+  ignore_errors: true # 避免因權限問題卡住，假設使用者已有 pip
+
+- name: Install required Python libraries
+  ansible.builtin.pip:
+    name:
+      - kubernetes
+      - boto3
+      - botocore
+      - jsonpatch  # 有時候處理 JSON diff 會用到
+    state: present
+    # 確保安裝到 Ansible 目前正在使用的同一個 Python 環境
+    executable: pip3

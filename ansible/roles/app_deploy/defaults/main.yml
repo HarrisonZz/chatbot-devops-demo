@@ -1,0 +1,118 @@
+---
+# ==============================================================================
+# 1. Cluster Connection & Preflight Checks (Preflight 任務專用)
+# ==============================================================================
+
+# 指定 Context (選填)：若為空字串，則使用 kubeconfig 當前選中的 context
+kubeconfig: "~/.kubeconfig"
+kubecontext: ""
+aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
+
+# 是否強制檢查節點狀態？(建議開啟，確保部署前叢集是健康的)
+require_nodes_ready: true
+
+# 最少需要幾個 Ready 節點才算通過檢查？
+# 開發環境通常設為 1，生產環境建議設為 2 或更多
+min_ready_nodes: 1
+eso_enabled: true
+preflight_enabled: true
+argocd_enabled: true
+reloader_enabled: true
+
+
+# ==============================================================================
+# 2. ArgoCD Configuration (GitOps 核心)
+# ==============================================================================
+
+# 是否安裝 ArgoCD
+install_argocd: true
+
+# 部署目標 Namespace
+argocd_namespace: "argocd"
+
+# ArgoCD Helm Chart 版本
+argocd_chart_version: "9.1.7"
+
+# Service 類型：
+# - 開發環境/Side Project: "LoadBalancer" (直接拿 Public IP)
+# - 生產環境: "ClusterIP" (配合 Ingress Controller)
+argocd_service_type: "LoadBalancer"
+
+# 高可用模式 (HA)：
+# - true: 啟用 Redis HA, 多個 Replica (生產環境用)
+# - false: 關閉 Redis HA, 單一 Replica (省錢/測試用)
+argocd_ha_enabled: false
+
+# ==============================================================================
+# 3. External Secrets Operator (ESO) Configuration (密碼管理)
+# ==============================================================================
+
+# 是否安裝 ESO
+install_eso: true
+
+# 部署目標 Namespace
+eso_namespace: "external-secrets"
+
+# ESO Helm Chart 版本
+eso_chart_version: "1.1.0"
+
+# ServiceAccount 名稱 (若配合 AWS IRSA 權限綁定需與 Pulumi 一致)
+eso_service_account: "external-secrets-sa"
+
+# ----------------------------
+# Reloader (Stakater)
+# ----------------------------
+reloader_namespace: reloader       # 建議獨立 namespace，不塞 argocd
+reloader_release_name: reloader
+
+reloader_repo_name: stakater
+reloader_repo_url: https://stakater.github.io/stakater-charts
+reloader_chart_ref: stakater/reloader
+reloader_chart_version: "1.0.110"  # 可自行鎖版本（依你環境調整）
+
+# 行為策略：建議 opt-in（只對有 annotation 的 workload 生效）
+# 實務上通常是：在 Deployment 加 reloader.stakater.com/auto: "true"
+reloader_values:
+  reloader:
+    # 如果你要全域 auto-reload（不建議），可在 values 另行調整
+    # autoReloadAll: false
+    logFormat: json
+
+  # 資源限制（開發環境保守設定）
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+  # Pod 安全性（保守）
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+  podSecurityContext:
+    runAsNonRoot: true
+
+# AWS 地區 (用於設定 ClusterSecretStore)
+aws_region: "ap-northeast-1"
+
+pulumi_env:
+  KUBECONFIG: "{{ kubeconfig }}"
+
+  HOME: "{{ lookup('env', 'HOME') }}"
+  # 1. 權限：明確傳入 Token
+  PULUMI_ACCESS_TOKEN: "{{ pulumi_access_token }}"
+  
+  # 2. 路徑：明確將 Venv 放在最前，並使用 lookup 抓取本機 PATH
+  PATH: "{{ pulumi_venv_bin }}:{{ lookup('env', 'PATH') }}"
+  
+  # 3. AWS：明確指定 Profile
+  AWS_PROFILE: "{{ aws_profile }}"
+  
+  # 4. [SRE 關鍵] 強制指定 Python Command，完全消除 "用錯 Python" 的風險
+  PULUMI_PYTHON_CMD: "{{ pulumi_venv_bin }}/python"
+  
+  # 5. 優化：讓 Log 即時輸出，不要緩衝 (方便 Debug)
+  PYTHONUNBUFFERED: "1"
