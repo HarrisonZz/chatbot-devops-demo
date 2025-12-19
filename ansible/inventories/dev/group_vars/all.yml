@@ -1,12 +1,30 @@
-prereq_mode: install
+prereq_mode: validate
 
 aws_region: ap-northeast-1
+
 pulumi_stack: dev
 pulumi_workdir: "{{ playbook_dir }}/../../infra"
+pulumi_preview_log: "{{ playbook_dir }}/../artifacts/pulumi-preview-{{ pulumi_stack }}.log"
+pulumi_project_list:
+  - registry
+  - edge
+  - network
+  - eks
 
-tool_versions:
-  pulumi: "3.212.0"
-  kubectl: "1.32.4"
-  awscli: "2.32.16"
-  helm: "3.19.2"
+base_packages:
+  - ca-certificates
+  - curl
+  - unzip
+  - tar
+  - gzip
+  - git
+  - jq
+  - python3
+  - python3-venv
+  - python3-pip
+
+kubectl_version: "1.32.4"
+helm_version: "3.19.2"     
+pulumi_version: "3.212.0"   
+arch: "amd64"
 

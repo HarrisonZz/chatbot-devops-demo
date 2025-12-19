@@ -1,0 +1,240 @@
+Previewing update (eks-dev)
+
+View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previews/80b0e7dd-521a-4a69-88dd-5a61375ee4d1
+
++ pulumi:pulumi:Stack: (create)
+    [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:pulumi:Stack::ai-chatbot-infra-eks-dev]
+    + pkg:compute:EksCluster: (create)
+        [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster::eks]
+    > pulumi:pulumi:StackReference: (read)
+        [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:pulumi:StackReference::HarrisonZz-org/ai-chatbot-infra/network-dev]
+        name: "HarrisonZz-org/ai-chatbot-infra/network-dev"
+        --outputs:--
+        outputs          : {
+            clusterName     : "eks-dev"
+            privateSubnetIds: [
+                [0]: "subnet-0fd1b2e9b9d7aca6b"
+                [1]: "subnet-0dead4e493939fb27"
+            ]
+            publicSubnetIds : [
+                [0]: "subnet-08b5dea317b23f4e8"
+                [1]: "subnet-0308a711f04a79399"
+            ]
+            vpcId           : "vpc-0ed47855946c69573"
+        }
+        + aws:iam/role:Role: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/role:Role::eks-cluster-role]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            assumeRolePolicy   : (json) {
+                Statement: [
+                    [0]: {
+                        Action   : "sts:AssumeRole"
+                        Effect   : "Allow"
+                        Principal: {
+                            Service: "eks.amazonaws.com"
+                        }
+                    }
+                ]
+                Version  : "2012-10-17"
+            }
+
+            forceDetachPolicies: false
+            maxSessionDuration : 3600
+            name               : "eks-cluster-role-1c00ced"
+            path               : "/"
+            tags               : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll            : {
+                ManagedBy: "pulumi"
+            }
+        + aws:ec2/securityGroup:SecurityGroup: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:ec2/securityGroup:SecurityGroup::eks-cluster-sg]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            description        : "EKS control-plane security group"
+            egress             : [
+                [0]: {
+                    cidrBlocks: [
+                        [0]: "0.0.0.0/0"
+                    ]
+                    fromPort  : 0
+                    protocol  : "-1"
+                    self      : false
+                    toPort    : 0
+                }
+            ]
+            name               : "eks-cluster-sg-a065cd4"
+            revokeRulesOnDelete: false
+            tags               : {
+                ManagedBy: "pulumi"
+                Name     : "eks-cluster-sg"
+            }
+            tagsAll            : {
+                ManagedBy: "pulumi"
+                Name     : "eks-cluster-sg"
+            }
+            vpcId              : "vpc-0ed47855946c69573"
+        + aws:iam/policy:Policy: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/policy:Policy::eks-eso-role-policy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            name      : "eks-eso-role-policy-2870fc0"
+            path      : "/"
+            policy    : (json) {
+                Statement: [
+                    [0]: {
+                        Action  : [
+                            [0]: "ssm:GetParameter"
+                            [1]: "ssm:GetParameters"
+                            [2]: "ssm:GetParametersByPath"
+                        ]
+                        Effect  : "Allow"
+                        Resource: "arn:aws:ssm:*:*:parameter/ai-chatbot/*"
+                    }
+                ]
+                Version  : "2012-10-17"
+            }
+
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSClusterPolicy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+            role      : "eks-cluster-role-1c00ced"
+        + aws:iam/role:Role: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/role:Role::eks-node-role]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            assumeRolePolicy   : (json) {
+                Statement: [
+                    [0]: {
+                        Action   : "sts:AssumeRole"
+                        Effect   : "Allow"
+                        Principal: {
+                            Service: "ec2.amazonaws.com"
+                        }
+                    }
+                ]
+                Version  : "2012-10-17"
+            }
+
+            forceDetachPolicies: false
+            maxSessionDuration : 3600
+            name               : "eks-node-role-df08a52"
+            path               : "/"
+            tags               : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll            : {
+                ManagedBy: "pulumi"
+            }
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSServicePolicy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+            role      : "eks-cluster-role-1c00ced"
+        + aws:eks/cluster:Cluster: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:eks/cluster:Cluster::eks-cluster]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            bootstrapSelfManagedAddons: true
+            name                      : "eks-dev"
+            roleArn                   : [unknown]
+            tags                      : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll                   : {
+                ManagedBy: "pulumi"
+            }
+            version                   : "1.32"
+            vpcConfig                 : {
+                endpointPrivateAccess: true
+                endpointPublicAccess : true
+                securityGroupIds     : [
+                    [0]: [unknown]
+                ]
+                subnetIds            : [
+                    [0]: "subnet-0fd1b2e9b9d7aca6b"
+                    [1]: "subnet-0dead4e493939fb27"
+                ]
+            }
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEKSWorkerNodePolicy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+            role      : "eks-node-role-df08a52"
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEKS_CNI_Policy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+            role      : "eks-node-role-df08a52"
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEC2ContainerRegistryReadOnly]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+            role      : "eks-node-role-df08a52"
+        + aws:eks/nodeGroup:NodeGroup: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:eks/nodeGroup:NodeGroup::eks-ng]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            clusterName  : "eks-dev"
+            instanceTypes: [
+                [0]: "t3.large"
+            ]
+            nodeGroupName: "eks-ng-3920ed1"
+            nodeRoleArn  : [unknown]
+            scalingConfig: {
+                desiredSize: 2
+                maxSize    : 3
+                minSize    : 1
+            }
+            subnetIds    : [
+                [0]: "subnet-0fd1b2e9b9d7aca6b"
+                [1]: "subnet-0dead4e493939fb27"
+            ]
+            tags         : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll      : {
+                ManagedBy: "pulumi"
+            }
+        + aws:iam/openIdConnectProvider:OpenIdConnectProvider: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/openIdConnectProvider:OpenIdConnectProvider::eks-oidc]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            clientIdLists  : [
+                [0]: "sts.amazonaws.com"
+            ]
+            tags           : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll        : {
+                ManagedBy: "pulumi"
+            }
+            thumbprintLists: [unknown]
+            url            : [unknown]
+        + aws:iam/role:Role: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/role:Role::eks-eso-role]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            assumeRolePolicy   : [unknown]
+            forceDetachPolicies: false
+            maxSessionDuration : 3600
+            name               : "eks-eso-role-602a861"
+            path               : "/"
+            tags               : {
+                Component: "EksCluster"
+                ManagedBy: "Pulumi"
+            }
+            tagsAll            : {
+                Component: "EksCluster"
+                ManagedBy: "Pulumi"
+            }
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-eso-role-attach]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : [unknown]
+            role      : "eks-eso-role-602a861"
+    --outputs:--
+    clusterArn     : [unknown]
+    clusterName    : "eks-dev"
+    env            : "dev"
+    eso_role_arn   : [unknown]
+    kubeconfig     : [unknown]
+    nodeGroupName  : "eks-ng-3920ed1"
+    oidcProviderArn: [unknown]
+Resources:
+    + 16 to create
