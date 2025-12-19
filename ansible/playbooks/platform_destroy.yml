@@ -1,0 +1,17 @@
+---
+    
+- name: Destroy full stack
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  pre_tasks:
+    - name: Refuse to destroy unless explicitly allowed
+      ansible.builtin.fail:
+        msg: "Refusing to destroy. Set -e allow_destroy=true to proceed."
+      when:
+        # 因為上面 vars 已經定死是 destroy 了，這裡其實只要檢查 allow_destroy
+        - not (allow_destroy | default(false) | bool)
+  roles:
+    - role: infra_provision
+      vars:
+        pulumi_action: destroy

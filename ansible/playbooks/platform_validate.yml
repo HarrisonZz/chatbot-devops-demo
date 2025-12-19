@@ -1,0 +1,8 @@
+- name: Update application only
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - ecr_login
+    - build_push_image
+    - smoke_test
