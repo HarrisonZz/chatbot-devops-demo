@@ -23,7 +23,7 @@ if [[ "${LOCAL_TEST}" == 1 ]]; then
     exit 0
 fi
 
-ECR_REPO_URL="$(pulumi --cwd ../infra stack output ecr_repo_url)" 
+ECR_REPO_URL="$(pulumi --cwd ../infra stack output ecr_repo_url --stack registry-dev)" 
 
 if [[ "${ECR_REPO_URL}" != "sre-chatbot-local" ]]; then
     echo "☁️  Pushing to ECR: ${ECR_REPO_URL}..."
