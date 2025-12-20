@@ -1,0 +1,14 @@
+# 簡單回顧一下 Service (不用改，確認存在即可)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-chatbot-service
+  namespace: default
+spec:
+  type: ClusterIP  # 配合 ALB 使用 IP 模式時，用 ClusterIP 即可，不用 LoadBalancer
+  selector:
+    app: ai-chatbot
+  ports:
+    - protocol: TCP
+      port: 80         # Ingress 會對接這個 Port
+      targetPort: 8501 # 這是 Pod 裡的 Streamlit Port

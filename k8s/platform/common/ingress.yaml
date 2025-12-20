@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-chatbot-ingress
+  namespace: default
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: www.hrscyj.uk    
+    # 🚨 指定這是一個 "公開 (Public)" 的 Load Balancer
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/load-balancer-name: "ai-chatbot-alb"
+    
+    # 🚨 關鍵：使用 "IP" 模式。
+    # 這樣 ALB 會直接把流量送給 Pod 的 IP (效率最高)，而不是經過 NodePort
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    # (選用) 設定健康檢查路徑 (Streamlit 專用)
+    alb.ingress.kubernetes.io/healthcheck-path: /_stcore/health
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-1:533267110761:certificate/a483eca0-7a20-45de-8480-0b32a5c6ec39
+spec:
+  ingressClassName: alb
+  rules:
+    - host: www.hrscyj.uk
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-chatbot-service # 對應上面的 Service 名稱
+                port:
+                  number: 80             # 對應 Service 的 Port

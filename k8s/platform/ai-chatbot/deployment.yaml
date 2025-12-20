@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-chatbot-app
+  namespace: default
+  labels:
+    app: ai-chatbot
+spec:
+  replicas: 1
+  # 🚨 必填：Selector 必須跟下面的 template labels 對上
+  selector:
+    matchLabels:
+      app: ai-chatbot
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ai-chatbot
+    spec:
+      # 🚨 綁定身份：讓 Pod 擁有 Bedrock 權限
+      serviceAccountName: ai-chatbot-sa
+      containers:
+        - name: ai-chatbot-app
+          # 你的 ECR Image
+          image: 533267110761.dkr.ecr.ap-northeast-1.amazonaws.com/ai-chatbot-app-dev:v0.1.0
+          imagePullPolicy: Always # 開發階段建議 Always，生產環境可改 IfNotPresent
+          
+          # 暴露 Port (Streamlit 預設是 8501)
+          ports:
+            - containerPort: 8501
+              name: http
+          envFrom:
+            - secretRef:
+                name: ai-chatbot-config
+          # 環境變數
+          env:
+            - name: AWS_REGION
+              value: "ap-northeast-1"
+            # 讓 Python log 即時輸出，不要緩存 (對看 Log 很重要)
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            # 如果是 Streamlit，建議明確指定 Server Address
+            - name: STREAMLIT_SERVER_ADDRESS
+              value: "0.0.0.0"
+
+          # 資源限制 (建議設定，避免 Pod 吃光節點資源)
+          resources:
+            requests:
+              cpu: "250m"    # 0.25 vCPU
+              memory: "512Mi"
+            limits:
+              cpu: "500m"    # 0.5 vCPU
+              memory: "1Gi"
+
+          # 存活檢查：如果不通過，K8s 會重啟 Pod
+          livenessProbe:
+            tcpSocket:
+              port: 8501
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          # 就緒檢查：通過後 Service 才會把流量導進來
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health # Streamlit 的內建健康檢查路徑
+              port: 8501
+            initialDelaySeconds: 5
+            periodSeconds: 10
