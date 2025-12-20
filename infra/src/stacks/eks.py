@@ -1,7 +1,7 @@
 import pulumi
 from pulumi import Output
-from components.compute.eks_cluster import EksCluster, EksArgs
-from components.compute.eks_addons import EksAddons
+import pulumi_cloudflare as cloudflare
+from components.compute import EksCluster, EksArgs, EksAddons, CloudflareValidatedCert
 
 def deploy(env: str):
     cfg = pulumi.Config("eks")
@@ -44,6 +44,27 @@ def deploy(env: str):
     eso_role_arn = addons.install_external_secrets(ssm_path_prefix=f"/ai-chatbot/{env}/*")
     bedrock_role_arn = addons.install_bedrock_role()
 
+    cf_cfg = pulumi.Config("cloudflare")
+
+    cf_zone_id = cf_cfg.require("cloudflareZoneID")
+    cf_domain = cf_cfg.require("domainName")
+    cf_token = cf_cfg.require_secret("apiToken")
+    cf_provider = cloudflare.Provider("cf-provider",
+        api_token=cf_token
+    )
+
+    cert = CloudflareValidatedCert(
+        f"api-{env}",
+        domain_name=cf_domain,
+        zone_id=cf_zone_id,
+        opts=pulumi.ResourceOptions(provider=cf_provider)
+    )
+
+    addons.install_external_dns(
+        api_token=cf_token,
+        domain_filter=cf_domain
+    )
+
     # 3. Exports
     pulumi.export("env", env)
     pulumi.export("clusterName", eks.cluster_name)
@@ -58,3 +79,5 @@ def deploy(env: str):
     pulumi.export("eso_role_arn", eso_role_arn)
     pulumi.export("alb_role_arn", alb_role_arn)
     pulumi.export("chatbot_bedrock_role_arn", bedrock_role_arn)
+
+    pulumi.export("certificate_arn", cert.arn)

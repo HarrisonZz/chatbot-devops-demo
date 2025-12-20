@@ -53,17 +53,8 @@ class EksCluster(pulumi.ComponentResource):
         ]:
             aws.iam.RolePolicyAttachment(f"{name}-cluster-{pol.split('/')[-1]}", role=cluster_role.name, policy_arn=pol, opts=parent)
 
-        # 2) Security Group（cluster SG）
-        cluster_sg = aws.ec2.SecurityGroup(
-            f"{name}-cluster-sg",
-            vpc_id=args.vpc_id,
-            description="EKS control-plane security group",
-            egress=[aws.ec2.SecurityGroupEgressArgs(protocol="-1", from_port=0, to_port=0, cidr_blocks=["0.0.0.0/0"])],
-            tags={**tags, "Name": f"{name}-cluster-sg"},
-            opts=parent,
-        )
 
-        # 3) EKS Cluster
+        # EKS Cluster
         cluster = aws.eks.Cluster(
             f"{name}-cluster",
             name=args.cluster_name,
@@ -71,7 +62,6 @@ class EksCluster(pulumi.ComponentResource):
             version=args.k8s_version,
             vpc_config=aws.eks.ClusterVpcConfigArgs(
                 subnet_ids=args.private_subnet_ids,  # ✅ Node 放 private 子網；LB 走 public 子網靠 tags
-                security_group_ids=[cluster_sg.id],
                 endpoint_public_access=args.endpoint_public_access,
                 endpoint_private_access=args.endpoint_private_access,
             ),

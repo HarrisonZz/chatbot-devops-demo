@@ -2,14 +2,13 @@ import pulumi
 import pulumi_aws as aws
 import pulumi_kubernetes as k8s
 import json
-from typing import Optional
-from .eks_cluster import EksCluster
+from typing import Any, Optional, List, Dict
 from pulumi import ResourceOptions
 from pathlib import Path
 # import requests
 
 class EksAddons(pulumi.ComponentResource):
-    def __init__(self, name: str, cluster: EksCluster, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, name: str, cluster: Any, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__("pkg:compute:EksAddons", name, None, opts)
         self.cluster = cluster
         self.provider_opts = ResourceOptions(parent=self, provider=cluster.k8s_provider)
@@ -36,7 +35,7 @@ class EksAddons(pulumi.ComponentResource):
         
         # print("Downloading official IAM Policy for ALB Controller...")
         # policy_url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/install/iam_policy.json"
-        policy_path = Path(__file__).resolve().parents[2] / "policies" / "aws_load_balancer_controller_iam_policy.json"
+        policy_path = Path(__file__).resolve().parents[2] / "policies" / "alb_controller_iam_policy.json"
         alb_policy_json = policy_path.read_text(encoding="utf-8")
         
         # try:
@@ -104,6 +103,63 @@ class EksAddons(pulumi.ComponentResource):
         ), opts=opts)
         
         return role_arn
+    def install_external_dns(self, api_token: str, domain_filter: str, version="1.18.0"):
+        """
+        安裝 External-DNS 並配置 Cloudflare 整合
+        :param api_token: Cloudflare API Token
+        :param domain_filter: 限制處理的網域 (例如 "yourdomain.com")
+        """
+        
+        # 1. 建立 Cloudflare 存取權限的 IAM Policy
+        # 雖然 External-DNS 是動 Cloudflare，但如果它要跑在 EKS IRSA 上，
+        # 我們通常會給它一個空的或基本的 Role，或者直接使用 Cloudflare Token。
+        # 這裡我們建立一個專屬的 Service Account 並把 Token 注入為 K8s Secret。
+        
+        # 建立 Cloudflare Token Secret
+        cf_token_secret = k8s.core.v1.Secret("cloudflare-api-token",
+            metadata={
+                "name": "cloudflare-api-token",
+                "namespace": "kube-system"
+            },
+            string_data={
+                "api-token": api_token
+            },
+            opts=self.provider_opts
+        )
+
+        # 2. 安裝 External-DNS Helm Chart
+        self.external_dns_chart = k8s.helm.v3.Chart("external-dns", k8s.helm.v3.ChartOpts(
+            chart="external-dns",
+            version=version,
+            namespace="kube-system",
+            fetch_opts=k8s.helm.v3.FetchOpts(repo="https://kubernetes-sigs.github.io/external-dns/"),
+            values={
+                "provider": "cloudflare",
+                "env": [
+                    {
+                        "name": "CF_API_TOKEN",
+                        "valueFrom": {
+                            "secretKeyRef": {
+                                "name": cf_token_secret.metadata["name"],
+                                "key": "api-token"
+                            }
+                        }
+                    }
+                ],
+                "extraArgs": [
+                    "--cloudflare-proxied", # 開啟 Cloudflare 橘色小雲朵
+                    "--source=ingress",     # 監控 Ingress 資源
+                    f"--domain-filter={domain_filter}"
+                ],
+                "policy": "sync", # 自動建立與刪除紀錄
+                "serviceAccount": {
+                    "create": True,
+                    "name": "external-dns"
+                }
+            }
+        ), opts=self.provider_opts.merge(pulumi.ResourceOptions(depends_on=[cf_token_secret])))
+
+        return self.external_dns_chart.urn
 
     def install_bedrock_role(self, service_account: str = "ai-chatbot-sa"):
 
