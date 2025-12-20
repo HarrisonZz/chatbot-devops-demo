@@ -1,0 +1,6 @@
+---
+- name: Upload Staic Resources
+  hosts: localhost
+  connection: local
+  roles:
+    - role: static_upload

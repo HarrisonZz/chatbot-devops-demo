@@ -1,4 +1,4 @@
-prereq_mode: validate
+prereq_mode: install
 
 aws_region: ap-northeast-1
 

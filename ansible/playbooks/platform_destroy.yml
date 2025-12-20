@@ -12,6 +12,9 @@
         # 因為上面 vars 已經定死是 destroy 了，這裡其實只要檢查 allow_destroy
         - not (allow_destroy | default(false) | bool)
   roles:
+    - role: app_deploy
+      vars:
+        pulumi_action: destroy
     - role: infra_provision
       vars:
         pulumi_action: destroy
