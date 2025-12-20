@@ -107,6 +107,7 @@ class StaticAssetsCdn(pulumi.ComponentResource):
             origins=[{
                 "domain_name": self.bucket.bucket_regional_domain_name,
                 "origin_id": origin_id,
+                "origin_path": "/static",
                 "origin_access_control_id": self.oac.id,
                 "s3_origin_config": {                                  
                     "origin_access_identity": "",

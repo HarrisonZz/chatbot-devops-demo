@@ -182,86 +182,11 @@ class EksCluster(pulumi.ComponentResource):
             kubeconfig=self.kubeconfig,
             opts=ResourceOptions(parent=self, depends_on=[ng])
         )
-    
-    def enable_alb_controller(self, namespace="kube-system", sa_name="aws-load-balancer-controller"):
-        """
-        建立 ALB Controller 所需的 IAM 權限並透過 Helm 安裝
-        """
-        # 1. 定義 ALB Controller 所需的 IAM Policy (這是官方標準權限)
-        # 注意：實務上建議從 AWS 官方下載最新的 policy json，這裡為了簡潔使用縮減版或引用預設
-        alb_policy_json = json.dumps({
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "iam:CreateServiceLinkedRole",
-                        "ec2:DescribeAccountAttributes",
-                        "ec2:DescribeAddresses",
-                        "ec2:DescribeAvailabilityZones",
-                        "ec2:DescribeInternetGateways",
-                        "ec2:DescribeVpcs",
-                        "ec2:DescribeSubnets",
-                        "ec2:DescribeSecurityGroups",
-                        "ec2:DescribeInstances",
-                        "ec2:DescribeNetworkInterfaces",
-                        "ec2:DescribeTags",
-                        "ec2:GetCoipPoolUsage",
-                        "ec2:DescribeCoipPools",
-                        "elasticloadbalancing:*",
-                        "acm:DescribeCertificate",
-                        "acm:ListCertificates",
-                        "acm:GetCertificate",
-                        "iam:GetServerCertificate",
-                        "iam:ListServerCertificates",
-                        "cognito-idp:DescribeUserPoolClient",
-                        "waf-regional:GetWebACLForResource",
-                        "waf-regional:GetWebACL",
-                        "waf-regional:AssociateWebACL",
-                        "waf-regional:DisassociateWebACL",
-                        "wafv2:GetWebACL",
-                        "wafv2:GetWebACLForResource",
-                        "wafv2:AssociateWebACL",
-                        "wafv2:DisassociateWebACL",
-                        "shield:DescribeProtection",
-                        "shield:GetSubscriptionState",
-                        "shield:DeleteProtection",
-                        "shield:CreateProtection",
-                        "shield:DescribeSubscription"
-                    ],
-                    "Resource": "*"
-                }
-            ]
-        })
-        
-        role_arn = self.create_irsa_role("alb-role", namespace, sa_name, alb_policy_json)
 
-        alb_chart = k8s.helm.v3.Chart(
-            "aws-load-balancer-controller",
-            k8s.helm.v3.ChartOpts(
-                chart="aws-load-balancer-controller",
-                version="1.7.1", # 請檢查最新版本
-                namespace=namespace,
-                fetch_opts=k8s.helm.v3.FetchOpts(
-                    repo="https://aws.github.io/eks-charts"
-                ),
-                values={
-                    "clusterName": self.cluster_name,
-                    "serviceAccount": {
-                        "create": True,
-                        "name": sa_name,
-                        "annotations": {
-                            "eks.amazonaws.com/role-arn": role_arn
-                        }
-                    },
-                    "region": aws.get_region().name,
-                    "vpcId": self.vpc_id,
-                }
-            ),
-            opts=ResourceOptions(parent=self, provider=self.k8s_provider)
+        aws.eks.Addon("pod-identity-agent",
+            cluster_name=self.cluster_name,
+            addon_name="eks-pod-identity-agent"
         )
-
-        return role_arn
 
     def create_irsa_role(self, role_name_prefix: str, namespace: str, service_account_name: str, policy_json: str):
         """

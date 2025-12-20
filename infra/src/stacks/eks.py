@@ -1,6 +1,7 @@
 import pulumi
 from pulumi import Output
 from components.compute.eks_cluster import EksCluster, EksArgs
+from components.compute.eks_addons import EksAddons
 
 def deploy(env: str):
     cfg = pulumi.Config("eks")
@@ -36,13 +37,12 @@ def deploy(env: str):
         ),
     )
 
-    eso_role_arn = eks.enable_external_secrets(
-        namespace="external-secrets",
-        sa_name="external-secrets-sa",
-        ssm_path_prefix="/ai-chatbot/*" # 可以限制只讀取這個專案的變數
-    )
-
-
+    addons = EksAddons("eks-addons", cluster=eks)
+    
+    # 執行安裝並獲取 ARN 用於 export
+    alb_role_arn = addons.install_alb_controller()
+    eso_role_arn = addons.install_external_secrets(ssm_path_prefix=f"/ai-chatbot/{env}/*")
+    bedrock_role_arn = addons.install_bedrock_role()
 
     # 3. Exports
     pulumi.export("env", env)
@@ -54,5 +54,7 @@ def deploy(env: str):
     pulumi.export("oidcProviderArn", eks.oidc_provider_arn) 
     pulumi.export("kubeconfig", eks.kubeconfig)
     
-    # ✅ 導出 ESO 的 Role ARN，給 Ansible 用
+    # ✅ 導出 IAM Role ARN，給 Ansible 用
     pulumi.export("eso_role_arn", eso_role_arn)
+    pulumi.export("alb_role_arn", alb_role_arn)
+    pulumi.export("chatbot_bedrock_role_arn", bedrock_role_arn)
