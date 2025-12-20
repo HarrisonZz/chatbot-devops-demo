@@ -14,10 +14,11 @@ require_nodes_ready: true
 # 最少需要幾個 Ready 節點才算通過檢查？
 # 開發環境通常設為 1，生產環境建議設為 2 或更多
 min_ready_nodes: 1
-eso_enabled: true
 preflight_enabled: true
 argocd_enabled: true
 reloader_enabled: true
+
+alb_fixed_name: "ai-chatbot-alb"
 
 
 # ==============================================================================
@@ -36,28 +37,12 @@ argocd_chart_version: "9.1.7"
 # Service 類型：
 # - 開發環境/Side Project: "LoadBalancer" (直接拿 Public IP)
 # - 生產環境: "ClusterIP" (配合 Ingress Controller)
-argocd_service_type: "LoadBalancer"
+argocd_service_type: "ClusterIP"
 
 # 高可用模式 (HA)：
 # - true: 啟用 Redis HA, 多個 Replica (生產環境用)
 # - false: 關閉 Redis HA, 單一 Replica (省錢/測試用)
 argocd_ha_enabled: false
-
-# ==============================================================================
-# 3. External Secrets Operator (ESO) Configuration (密碼管理)
-# ==============================================================================
-
-# 是否安裝 ESO
-install_eso: true
-
-# 部署目標 Namespace
-eso_namespace: "external-secrets"
-
-# ESO Helm Chart 版本
-eso_chart_version: "1.1.0"
-
-# ServiceAccount 名稱 (若配合 AWS IRSA 權限綁定需與 Pulumi 一致)
-eso_service_account: "external-secrets-sa"
 
 # ----------------------------
 # Reloader (Stakater)

@@ -1,0 +1,20 @@
+- name: Get Bucket Name from Pulumi
+  command: >
+    pulumi stack output bucket_name 
+    --cwd {{ pulumi_workdir }} 
+    --stack edge-{{ pulumi_stack }}
+  register: s3_bucket_output
+  changed_when: false
+
+# 2. 同步檔案
+- name: Sync Assets to S3
+  command: >
+    aws s3 sync 
+    {{ static_local_src }} 
+    s3://{{ s3_bucket_output.stdout }}/{{ static_s3_dest_prefix }}
+    {{ static_sync_opts }}
+    --cache-control "{{ static_cache_control }}"
+  delegate_to: localhost
+  environment: "{{ pulumi_env }}"
+  register: sync_result
+  changed_when: "'upload:' in sync_result.stdout"

@@ -16,6 +16,9 @@
   ansible.builtin.import_tasks: install.yml
   tags: [install]
 
+- name: destroy stack resources
+  ansible.builtin.import_tasks: destroy.yml
+  when: pulumi_action == 'destroy'
 # - name: Configure ESO stores & externalsecrets
 #   ansible.builtin.import_tasks: configure.yml
 #   tags: [configure]

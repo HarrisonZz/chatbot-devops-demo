@@ -27,19 +27,3 @@
         remote_src: yes
       become: yes
   when: pulumi_check.rc != 0
-
-# ------------------------------------------------------------------------------
-# 2. Pulumi Python 環境準備 (每次執行都會檢查，確保版本一致)
-# ------------------------------------------------------------------------------
-- name: Setup Pulumi Python Virtualenv
-  ansible.builtin.pip:
-    requirements: "{{ pulumi_workdir }}/requirements.txt"
-    virtualenv: "{{ pulumi_venv_path }}"
-    virtualenv_command: "python3 -m venv"
-  # 這裡不需要 become，通常 venv 建立在使用者目錄下即可
-  register: python_setup
-
-- name: Debug Python Setup
-  ansible.builtin.debug:
-    msg: "Python dependencies updated!"
-  when: python_setup.changed

@@ -1,8 +1,4 @@
-- name: Validate required vars
-  ansible.builtin.assert:
-    that:
-      - (not eso_enabled) or (eso_irsa_role_arn | length > 0)
-    fail_msg: "❌ eso_irsa_role_arn is required when eso_enabled=true. Did fetch_facts.yml run successfully?"
+---
 
 - name: Add Helm Repositories
   kubernetes.core.helm_repository:
@@ -10,7 +6,6 @@
     repo_url: "{{ item.url }}"
   loop:
     - { name: argo, url: "https://argoproj.github.io/argo-helm" }
-    - { name: external-secrets, url: "https://charts.external-secrets.io" }
     - { name: stakater, url: "https://stakater.github.io/stakater-charts" }
 
 - name: Update Kubeconfig with Specific Profile
@@ -38,7 +33,6 @@
   environment: "{{ pulumi_env | default({}) }}"
   loop:
     - "{{ argocd_namespace }}"
-    - "{{ eso_namespace }}"
     - "{{ reloader_namespace }}"
 
 - name: Add Argo Helm repo
@@ -76,47 +70,12 @@
       # 網路設定：直接開 LoadBalancer 方便連線
       server:
         service:
-          type: "{{ argocd_service_type | default('LoadBalancer') }}"
+          type: "{{ argocd_service_type | default('ClusterIP') }}"
         # 禁止 Helm 安裝時自帶的 Ingress，避免跟我們自己的 Ingress Controller 打架
         ingress:
           enabled: false
   environment: "{{ pulumi_env | default({}) }}"
   when: argocd_enabled | default(true)
-
-- name: Add External Secrets Helm repo
-  kubernetes.core.helm_repository:
-    name: external-secrets
-    repo_url: https://charts.external-secrets.io
-    state: present
-  become: false
-
-- name: Update Helm repo cache
-  ansible.builtin.command: /usr/sbin/helm repo update
-  changed_when: false
-  become: false
-
-- name: Install External Secrets Operator
-  kubernetes.core.helm:
-    kubeconfig: "{{ kubeconfig | expanduser }}"
-    name: external-secrets
-    chart_ref: external-secrets/external-secrets
-    release_namespace: "{{ eso_namespace }}"
-    chart_version: "{{ eso_chart_version | default('1.1.0') }}"
-    values:
-      installCRDs: true # 重要：自動安裝 CRD
-      serviceAccount:
-        create: true
-        name: "{{ eso_service_account | default('external-secrets-sa') }}"
-        # 🚨 關鍵：注入 AWS IRSA Role ARN
-        # 這讓 ESO Pod 有權限去讀取 AWS Systems Manager (SSM)
-        annotations:
-          eks.amazonaws.com/role-arn: "{{ eso_irsa_role_arn }}"
-      
-      # 讓 Webhook 也跑在 host network 避免一些 CNI 延遲問題 (可選)
-      webhook:
-        hostNetwork: false
-  environment: "{{ pulumi_env | default({}) }}"
-  when: eso_enabled | default(true)
 
 - name: Add Stakater Helm repo
   kubernetes.core.helm_repository:

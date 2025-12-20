@@ -46,5 +46,7 @@
     pulumi destroy --stack {{ current_stack_full_name }} --yes
   args:
     chdir: "{{ pulumi_workdir }}"
-  environment: "{{ pulumi_env }}"
+  environment: 
+    - "{{ pulumi_env }}"
+    - PULUMI_K8S_DELETE_UNREACHABLE: "true"
   when: pulumi_action == 'destroy'
