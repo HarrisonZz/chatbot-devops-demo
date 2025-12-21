@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-chatbot-dev
+  namespace: argocd
+  annotations:
+    # 平台 addons 之後如果也納入 root，可用 sync-wave 控順序
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/HarrisonZz/chatbot-devops-demo.git
+    targetRevision: main
+    path: k8s/app/ai-chatbot/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

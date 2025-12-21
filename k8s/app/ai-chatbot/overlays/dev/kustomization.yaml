@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# ✅ 你要 dev 放哪個 namespace
+namespace: default
+
+images:
+  - name: 533267110761.dkr.ecr.ap-northeast-1.amazonaws.com/ai-chatbot-app-dev
+    newTag: v0.1.0
+
+patches:
+  - path: patch-deploy.yaml
+  - path: patch-ingress.yaml

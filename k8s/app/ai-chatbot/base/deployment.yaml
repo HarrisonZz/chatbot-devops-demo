@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai-chatbot-app
-  namespace: default
   labels:
     app: ai-chatbot
+    app.kubernetes.io/name: ai-chatbot
+    app.kubernetes.io/part-of: ai-chatbot
 spec:
   replicas: 1
   # 🚨 必填：Selector 必須跟下面的 template labels 對上
