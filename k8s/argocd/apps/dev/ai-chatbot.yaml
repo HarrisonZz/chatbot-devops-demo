@@ -7,7 +7,7 @@ metadata:
     # 平台 addons 之後如果也納入 root，可用 sync-wave 控順序
     argocd.argoproj.io/sync-wave: "10"
 spec:
-  project: default
+  project: apps
   source:
     repoURL: https://github.com/HarrisonZz/chatbot-devops-demo.git
     targetRevision: main
@@ -19,3 +19,7 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - PruneLast=true

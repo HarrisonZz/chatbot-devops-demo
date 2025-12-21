@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  sourceRepos:
+    - https://github.com/HarrisonZz/chatbot-devops-demo.git
+  destinations:
+    - server: "https://kubernetes.default.svc"
+      namespace: "*"
+
+  # 關鍵：應用專案不給任何 cluster-scope
+  clusterResourceWhitelist: []
