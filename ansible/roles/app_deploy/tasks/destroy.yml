@@ -1,29 +1,25 @@
 ---
+  - name: 1. 刪除 Kubernetes Ingress (觸發 ALB 銷毀)
+    kubernetes.core.k8s:
+      state: absent
+      definition:
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: ai-chatbot-ingress
+          namespace: default
+    register: ingress_delete
+    until: ingress_delete is succeeded
+    retries: 3
+    delay: 10
 
-- name: 準備銷毀 EKS 平台
-  hosts: localhost
-  tasks:
-    - name: 1. 刪除 Kubernetes Ingress (觸發 ALB 銷毀)
-      kubernetes.core.k8s:
-        state: absent
-        definition:
-          apiVersion: networking.k8s.io/v1
-          kind: Ingress
-          metadata:
-            name: ai-chatbot-ingress
-            namespace: default
-      register: ingress_delete
-      until: ingress_delete is succeeded
-      retries: 3
-      delay: 10
-
-    - name: 2. 等待 AWS ALB 實體完全消失 (選用)
-      amazon.aws.elb_network_lb_info:
-        region: ap-northeast-1
-        names:
-          - "{{ alb_fixed_name }}" # 這裡可以根據名稱規律動態匹配
-      register: alb_info
-      until: alb_info.network_load_balancers | length == 0
-      retries: 15
-      delay: 20
-      ignore_errors: yes
+  - name: 2. 等待 AWS ALB 實體完全消失 (選用)
+    amazon.aws.elb_application_lb_info:
+      region: ap-northeast-1
+      names:
+        - "{{ alb_fixed_name }}" # 這裡可以根據名稱規律動態匹配
+    register: alb_info
+    until: alb_info.network_load_balancers | length == 0
+    retries: 15
+    delay: 20
+    ignore_errors: yes
