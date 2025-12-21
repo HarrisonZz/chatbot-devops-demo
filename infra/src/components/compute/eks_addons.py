@@ -54,26 +54,51 @@ class EksAddons(pulumi.ComponentResource):
             alb_policy_json
         )
 
+        alb_sa = k8s.core.v1.ServiceAccount(
+            "aws-load-balancer-controller-sa",
+            metadata=k8s.meta.v1.ObjectMetaArgs(
+                name="aws-load-balancer-controller",
+                namespace="kube-system",
+                annotations={
+                    "eks.amazonaws.com/role-arn": role_arn,
+                },
+            ),
+            opts=self.provider_opts,
+        )
+        
+        opts = self.provider_opts.merge(ResourceOptions(depends_on=[alb_sa]))
         # -------------------------------------------------------------
         # 安裝 Helm Chart
         # -------------------------------------------------------------
-        self.alb_chart = k8s.helm.v3.Chart("alb-controller", k8s.helm.v3.ChartOpts(
-            chart="aws-load-balancer-controller",
-            version=version,
-            namespace="kube-system",
-            fetch_opts=k8s.helm.v3.FetchOpts(repo="https://aws.github.io/eks-charts"),
-            values={
-                "clusterName": self.cluster.cluster_name,
-                "serviceAccount": {
-                    "create": True, 
-                    "name": "aws-load-balancer-controller", 
-                    "annotations": {"eks.amazonaws.com/role-arn": role_arn}
+        self.alb_release = k8s.helm.v3.Release(
+            "alb-controller",
+            k8s.helm.v3.ReleaseArgs(
+                chart="aws-load-balancer-controller",
+                version=version,
+                namespace="kube-system",
+                repository_opts=k8s.helm.v3.RepositoryOptsArgs(
+                    repo="https://aws.github.io/eks-charts",
+                ),
+                values={
+                    "clusterName": self.cluster.cluster_name,
+
+                    # 你原本 create=True + annotations 沒問題
+                    # 若你之後想「最穩」：可以改成 create=False，自己用 k8s.core.v1.ServiceAccount 建 SA
+                    "serviceAccount": {
+                        "create": False,
+                        "name": "aws-load-balancer-controller",
+                    },
+
+                    "region": aws.get_region().name,
+                    "vpcId": self.cluster.vpc_id,
                 },
-                "region": aws.get_region().name,
-                "vpcId": self.cluster.vpc_id,
-            }
-        ), self.provider_opts)
-        
+                skip_await=False,
+                atomic=True,
+                cleanup_on_fail=True,
+            ),
+            opts=opts,
+        )
+                
         return role_arn
 
     def install_external_secrets(self, version="1.1.0", ssm_path_prefix: str = "/ai-chatbot/*"):
@@ -128,6 +153,9 @@ class EksAddons(pulumi.ComponentResource):
         )
 
         # 2. 安裝 External-DNS Helm Chart
+        opts=self.provider_opts.merge(
+            pulumi.ResourceOptions(depends_on=[cf_token_secret, self.alb_release])
+        )
         self.external_dns_chart = k8s.helm.v3.Chart("external-dns", k8s.helm.v3.ChartOpts(
             chart="external-dns",
             version=version,
@@ -157,7 +185,7 @@ class EksAddons(pulumi.ComponentResource):
                     "name": "external-dns"
                 }
             }
-        ), opts=self.provider_opts.merge(pulumi.ResourceOptions(depends_on=[cf_token_secret])))
+        ), opts=opts)
 
         return self.external_dns_chart.urn
 
