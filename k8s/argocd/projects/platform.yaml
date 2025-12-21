@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform
+  namespace: argocd
+spec:
+  description: Platform-level resources (cluster addons, cluster-scoped CRs)
+
+  # 允許此 project 的 app 從哪些 Git repo 來
+  sourceRepos:
+    - https://github.com/HarrisonZz/chatbot-devops-demo.git
+
+  # 允許部署到哪些 cluster/namespace
+  destinations:
+    - server: "https://kubernetes.default.svc"
+      namespace: "*"   # 你也可以改成只允許特定 ns，例如 "argocd","external-secrets"
+
+  # 允許管理哪些 cluster-scope 資源（非常重要：預設應該收斂）
+  clusterResourceWhitelist:
+    - group: "external-secrets.io"
+      kind: "ClusterSecretStore"
+
+  # （可選）namespace-scope 資源白名單（想鎖更死才開）
+  # namespaceResourceWhitelist:
+  #   - group: ""
+  #     kind: "ConfigMap"
+
+
