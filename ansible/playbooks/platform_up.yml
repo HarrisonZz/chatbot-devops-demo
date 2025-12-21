@@ -16,4 +16,5 @@
 #    - ecr_login
 #    - build_push_image
     - role: app_deploy     # only if EKS
+      tags: ["app"]
 #    - smoke_test
