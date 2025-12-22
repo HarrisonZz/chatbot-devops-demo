@@ -17,12 +17,14 @@ spec:
 
   # 允許管理哪些 cluster-scope 資源（非常重要：預設應該收斂）
   clusterResourceWhitelist:
-    - group: "external-secrets.io"
-      kind: "ClusterSecretStore"
-
-  # （可選）namespace-scope 資源白名單（想鎖更死才開）
-  # namespaceResourceWhitelist:
-  #   - group: ""
-  #     kind: "ConfigMap"
+    # 1. 允許建立 Namespace
+    - group: ''
+      kind: Namespace
+    # 2. 允許建立 ClusterSecretStore (如果你的 Git 裡有用的話)
+    - group: 'external-secrets.io'
+      kind: ClusterSecretStore
+    # 3. 如果你有用 ClusterExternalSecret，也要加
+    - group: 'external-secrets.io'
+      kind: ClusterExternalSecret
 
 
