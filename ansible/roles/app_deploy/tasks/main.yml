@@ -2,19 +2,24 @@
 
 - name: Fetch Infrastructure Facts (Pulumi Outputs)
   ansible.builtin.import_tasks: fetch_facts.yml
+  when: pulumi_action == 'up'
   tags: [facts, install]
 
 - name: Preflight (connectivity & cluster readiness)
-  when: preflight_enabled | bool
+  when: 
+    - preflight_enabled | bool
+    - pulumi_action == 'up'
   ansible.builtin.import_tasks: preflight.yml
   tags: [preflight]
 
 - name: Install controllers (ArgoCD/ESO/Reloader)
   ansible.builtin.import_tasks: install.yml
+  when: pulumi_action == 'up'
   tags: [install]
 
 - name: destroy stack resources
   ansible.builtin.import_tasks: destroy.yml
+  environment: "{{ pulumi_env }}"
   when: pulumi_action == 'destroy'
 # - name: Configure ESO stores & externalsecrets
 #   ansible.builtin.import_tasks: configure.yml

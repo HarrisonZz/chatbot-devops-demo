@@ -44,6 +44,12 @@ argocd_service_type: "ClusterIP"
 # - false: 關閉 Redis HA, 單一 Replica (省錢/測試用)
 argocd_ha_enabled: false
 
+argocd_namespace: argocd
+argocd_apps_to_delete:
+  - root-dev
+  - ai-chatbot-dev
+  - platform-external-secrets
+
 # ----------------------------
 # Reloader (Stakater)
 # ----------------------------

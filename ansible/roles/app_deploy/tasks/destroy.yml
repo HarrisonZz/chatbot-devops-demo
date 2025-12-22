@@ -1,4 +1,24 @@
 ---
+  - name: Force enable ArgoCD cascade delete via finalizer
+    ansible.builtin.command: >
+      kubectl -n {{ argocd_namespace }}
+      patch application {{ item }}
+      --type merge
+      -p '{"metadata":{"finalizers":["resources-finalizer.argocd.argoproj.io"]}}'
+    loop: "{{ argocd_apps_to_delete }}"
+    changed_when: true
+    failed_when: false   # 有些 app 可能不存在，別讓它炸整段
+  
+  - name: Delete ArgoCD Applications (stop GitOps reconciliation)
+    kubernetes.core.k8s:
+      state: absent
+      api_version: argoproj.io/v1alpha1
+      kind: Application
+      namespace: "{{ argocd_namespace }}"
+      name: "{{ item }}"
+    loop: "{{ argocd_apps_to_delete }}"
+    ignore_errors: true
+
   - name: 1. 刪除 Kubernetes Ingress (觸發 ALB 銷毀)
     kubernetes.core.k8s:
       state: absent

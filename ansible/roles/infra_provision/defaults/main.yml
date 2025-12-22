@@ -1,5 +1,9 @@
 ---
 
+kubeconfig: "~/.kubeconfig"
+kubecontext: ""
+aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
+
 # --- 路徑設定 ---
 pulumi_workdir: "{{ playbook_dir }}/../../infra"
 pulumi_use_venv: true
@@ -26,6 +30,7 @@ pulumi_allow_destroy: false
 aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
 
 pulumi_env:
+  KUBECONFIG: "{{ kubeconfig }}"
   HOME: "{{ lookup('env', 'HOME') }}"
   # 1. 權限：明確傳入 Token
   PULUMI_ACCESS_TOKEN: "{{ pulumi_access_token }}"
