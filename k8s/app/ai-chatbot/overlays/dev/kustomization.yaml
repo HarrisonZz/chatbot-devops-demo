@@ -5,7 +5,7 @@ resources:
   - ../../base
 
 # ✅ 你要 dev 放哪個 namespace
-namespace: default
+namespace: ai-chatbot-dev
 
 images:
   - name: 533267110761.dkr.ecr.ap-northeast-1.amazonaws.com/ai-chatbot-app-dev

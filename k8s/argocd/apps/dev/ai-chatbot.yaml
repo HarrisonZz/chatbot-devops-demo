@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: ai-chatbot-dev
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
     # 平台 addons 之後如果也納入 root，可用 sync-wave 控順序
     argocd.argoproj.io/sync-wave: "10"
