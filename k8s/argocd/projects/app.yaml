@@ -11,4 +11,6 @@ spec:
       namespace: "*"
 
   # 關鍵：應用專案不給任何 cluster-scope
-  clusterResourceWhitelist: []
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
