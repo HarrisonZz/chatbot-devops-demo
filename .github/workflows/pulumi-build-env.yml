@@ -50,7 +50,7 @@ jobs:
             -e PULUMI_STACK="${PULUMI_STACK}" \
             -v "${PWD}:/work" -w /work \
             pulumi-build-env:${IMAGE_TAG} \
-            sh -lc '
+            bash -lc '
               set -euo pipefail
               aws sts get-caller-identity
               pulumi version
