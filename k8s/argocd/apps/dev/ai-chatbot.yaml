@@ -16,7 +16,7 @@ spec:
     path: k8s/app/ai-chatbot/overlays/dev
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: ai-chatbot-dev
   syncPolicy:
     automated:
       prune: true
