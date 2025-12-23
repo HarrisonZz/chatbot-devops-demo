@@ -2,45 +2,59 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+
 permissions:
   id-token: write
   contents: read
 
 jobs:
-
   build-and-deploy:
-
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-northeast-1
+      ROLE_ARN: arn:aws:iam::533267110761:role/github-actions-oidc-role
+      IMAGE_TAG: local
+      PULUMI_STACK: org/proj/dev   # <- 改成你的 stack
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Configure AWS credentials via OIDC
+      - name: Configure AWS credentials (OIDC -> AssumeRole)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/GHA_OIDC_ROLE
-          aws-region: ap-northeast-1
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-    - name: Set Image Tag
-        run: echo "IMAGE_TAG=build-env-${{ github.sha }}" >> $GITHUB_ENV
-        
-    - name: Build Pulumi Build-Env Image
-      run: |
-        docker build . --file Dockerfile --tag ${{ env.IMAGE_TAG }}
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=build-env-${GITHUB_SHA}" >> $GITHUB_ENV
 
-    - name: Run Pulumi Up via Docker
+      - name: Build Pulumi Build-Env Image
+        run: |
+          set -euo pipefail
+          docker build . --file Dockerfile --tag pulumi-build-env:${IMAGE_TAG}
+
+      - name: Pulumi up inside container
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
+          set -euo pipefail
+
           docker run --rm \
-            -v $(pwd):/work \
-            -w /work \
-            -e PULUMI_ACCESS_TOKEN=${{ env.PULUMI_ACCESS_TOKEN }} \
-            -e AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_REGION=ap-northeast-1 \
-            ${{ env.IMAGE_TAG }} \
-            bash -c "pulumi stack select demo-pr-${{ github.event.number }} --create && pulumi up --yes"
+            -e AWS_REGION="${AWS_REGION}" \
+            -e AWS_DEFAULT_REGION="${AWS_REGION}" \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_SESSION_TOKEN \
+            -e PULUMI_ACCESS_TOKEN \
+            -e PULUMI_STACK="${PULUMI_STACK}" \
+            -v "${PWD}:/work" -w /work \
+            pulumi-build-env:${IMAGE_TAG} \
+            sh -lc '
+              set -euo pipefail
+              aws sts get-caller-identity
+              pulumi version
+              pulumi stack select "${PULUMI_STACK}"
+              pulumi preview
+              pulumi up --yes
+            '
