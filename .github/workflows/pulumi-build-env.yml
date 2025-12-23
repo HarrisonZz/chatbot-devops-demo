@@ -1,0 +1,46 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  build-and-deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/GHA_OIDC_ROLE
+          aws-region: ap-northeast-1
+
+    - name: Set Image Tag
+        run: echo "IMAGE_TAG=build-env-${{ github.sha }}" >> $GITHUB_ENV
+        
+    - name: Build Pulumi Build-Env Image
+      run: |
+        docker build . --file Dockerfile --tag ${{ env.IMAGE_TAG }}
+
+    - name: Run Pulumi Up via Docker
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          docker run --rm \
+            -v $(pwd):/work \
+            -w /work \
+            -e PULUMI_ACCESS_TOKEN=${{ env.PULUMI_ACCESS_TOKEN }} \
+            -e AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }} \
+            -e AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }} \
+            -e AWS_REGION=ap-northeast-1 \
+            ${{ env.IMAGE_TAG }} \
+            bash -c "pulumi stack select demo-pr-${{ github.event.number }} --create && pulumi up --yes"
