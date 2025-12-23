@@ -47,10 +47,16 @@ jobs:
             -e PULUMI_STACK="${PULUMI_STACK_NET}" \
             -v "${PWD}:/work" -w /work/infra \
             pulumi-build-env:${IMAGE_TAG} \
-            bash -lc '
+            bash -lc "
               set -euo pipefail
               aws sts get-caller-identity
               pulumi version
-              pulumi stack select "${PULUMI_STACK}"
+              echo '== stacks in this project =='
+              pulumi stack ls || true
+
+              echo '== selecting stack =='
+              pulumi stack select \"${PULUMI_STACK}\"
+              
+              echo '== preview =='
               pulumi preview
-            '
+            "
