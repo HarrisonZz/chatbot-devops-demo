@@ -51,6 +51,6 @@ jobs:
               set -euo pipefail
               aws sts get-caller-identity
               pulumi version
-              pulumi stack select "${PULUMI_STACK_NET}"
+              pulumi stack select "${PULUMI_STACK}"
               pulumi preview
             '
