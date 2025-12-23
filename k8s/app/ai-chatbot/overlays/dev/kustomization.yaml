@@ -20,7 +20,5 @@ patches:
         path: /metadata/annotations
         value:
           eks.amazonaws.com/role-arn: arn:aws:iam::533267110761:role/eks-addons-bedrock-role-e11f02a
-
-patches:
   - path: patch-deploy.yaml
   - path: patch-ingress.yaml

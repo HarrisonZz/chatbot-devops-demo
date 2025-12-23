@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ai-chatbot-app
+  annotations:
+    reloader.stakater.com/auto: "true"
   labels:
     app: ai-chatbot
     app.kubernetes.io/name: ai-chatbot
