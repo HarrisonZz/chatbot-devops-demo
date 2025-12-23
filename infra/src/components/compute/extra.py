@@ -45,6 +45,7 @@ class CloudflareValidatedCert(pulumi.ComponentResource):
             name=f"/network/cert/{name}/alb-cert-arn", # 建議的路徑格式
             type="String",
             value=self.validation.certificate_arn,
+            overwrite=True,
             opts=pulumi.ResourceOptions(parent=self)
         )
 

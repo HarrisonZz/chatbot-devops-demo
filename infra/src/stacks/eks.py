@@ -37,33 +37,33 @@ def deploy(env: str):
         ),
     )
 
-    addons = EksAddons("eks-addons", cluster=eks)
+    # addons = EksAddons("eks-addons", cluster=eks)
     
-    # 執行安裝並獲取 ARN 用於 export
-    alb_role_arn = addons.install_alb_controller()
-    eso_role_arn = addons.install_external_secrets(ssm_path_prefix=f"/ai-chatbot/{env}/*")
-    bedrock_role_arn = addons.install_bedrock_role()
+    # # 執行安裝並獲取 ARN 用於 export
+    # alb_role_arn = addons.install_alb_controller()
+    # eso_role_arn = addons.install_external_secrets(ssm_path_prefix=f"/ai-chatbot/{env}/*")
+    # bedrock_role_arn = addons.install_bedrock_role()
 
-    cf_cfg = pulumi.Config("cloudflare")
+    # cf_cfg = pulumi.Config("cloudflare")
 
-    cf_zone_id = cf_cfg.require("cloudflareZoneID")
-    cf_domain = cf_cfg.require("domainName")
-    cf_token = cf_cfg.require_secret("apiToken")
-    cf_provider = cloudflare.Provider("cf-provider",
-        api_token=cf_token
-    )
+    # cf_zone_id = cf_cfg.require("cloudflareZoneID")
+    # cf_domain = cf_cfg.require("domainName")
+    # cf_token = cf_cfg.require_secret("apiToken")
+    # cf_provider = cloudflare.Provider("cf-provider",
+    #     api_token=cf_token
+    # )
 
-    cert = CloudflareValidatedCert(
-        f"api-{env}",
-        domain_name=cf_domain,
-        zone_id=cf_zone_id,
-        opts=pulumi.ResourceOptions(provider=cf_provider)
-    )
+    # cert = CloudflareValidatedCert(
+    #     f"api-{env}",
+    #     domain_name=cf_domain,
+    #     zone_id=cf_zone_id,
+    #     opts=pulumi.ResourceOptions(provider=cf_provider)
+    # )
 
-    addons.install_external_dns(
-        api_token=cf_token,
-        domain_filter=cf_domain
-    )
+    # addons.install_external_dns(
+    #     api_token=cf_token,
+    #     domain_filter=cf_domain
+    # )
 
     # 3. Exports
     pulumi.export("env", env)
@@ -72,12 +72,13 @@ def deploy(env: str):
     pulumi.export("nodeGroupName", eks.nodegroup_name)
     
     # 用於 IAM OIDC Trust (如果別的 Stack 需要)
-    pulumi.export("oidcProviderArn", eks.oidc_provider_arn) 
+    pulumi.export("oidcProviderArn", eks.oidc_provider_arn)
+    pulumi.export("oidcProviderUrl",eks.oidc_provider_url) 
     pulumi.export("kubeconfig", eks.kubeconfig)
     
     # ✅ 導出 IAM Role ARN，給 Ansible 用
-    pulumi.export("eso_role_arn", eso_role_arn)
-    pulumi.export("alb_role_arn", alb_role_arn)
-    pulumi.export("chatbot_bedrock_role_arn", bedrock_role_arn)
+    # pulumi.export("eso_role_arn", eso_role_arn)
+    # pulumi.export("alb_role_arn", alb_role_arn)
+    # pulumi.export("chatbot_bedrock_role_arn", bedrock_role_arn)
 
-    pulumi.export("certificate_arn", cert.arn)
+    # pulumi.export("certificate_arn", cert.arn)

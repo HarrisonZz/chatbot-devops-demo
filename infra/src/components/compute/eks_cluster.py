@@ -88,6 +88,24 @@ class EksCluster(pulumi.ComponentResource):
             aws.iam.RolePolicyAttachment(f"{name}-node-{pol.split('/')[-1]}", role=node_role.name, policy_arn=pol, opts=parent)
 
         # 5) Managed Node Group
+
+        launch_template = aws.ec2.LaunchTemplate(
+            f"{name}-lt",
+            image_id="", # 留空，讓 EKS 自動選擇最新的 Optimized AMI
+            # 這裡可以不用設 instance_type，因為 NodeGroup 會覆蓋，但設了也無妨
+            # instance_type="t3.medium", 
+            
+            # 🔥 關鍵設定在這裡！
+            metadata_options=aws.ec2.LaunchTemplateMetadataOptionsArgs(
+                http_endpoint="enabled",
+                http_tokens="required",   # 強制使用 IMDSv2 (資安最佳實踐)
+                http_put_response_hop_limit=2, # 🔥 必須設為 2，Pod 才能讀到 Metadata
+            ),
+            
+            tags=tags,
+            opts=parent,
+        )
+
         ng = aws.eks.NodeGroup(
             f"{name}-ng",
             cluster_name=cluster.name,
@@ -98,6 +116,10 @@ class EksCluster(pulumi.ComponentResource):
                 desired_size=args.desired_size,
                 min_size=args.min_size,
                 max_size=args.max_size,
+            ),
+            launch_template=aws.eks.NodeGroupLaunchTemplateArgs(
+                id=launch_template.id,
+                version=launch_template.latest_version,
             ),
             tags=tags,
             opts=parent,
@@ -178,65 +200,65 @@ class EksCluster(pulumi.ComponentResource):
             addon_name="eks-pod-identity-agent"
         )
 
-    def create_irsa_role(self, role_name_prefix: str, namespace: str, service_account_name: str, policy_json: str):
-        """
-        建立一個綁定特定 K8s ServiceAccount 的 IAM Role
-        """
-        # 建立 Trust Policy
-        assume_role_policy = pulumi.Output.all(self.oidc_provider_url, self.oidc_provider_arn).apply(
-            lambda args: json.dumps({
-                "Version": "2012-10-17",
-                "Statement": [{
-                    "Effect": "Allow",
-                    "Principal": {"Federated": args[1]},
-                    "Action": "sts:AssumeRoleWithWebIdentity",
-                    "Condition": {
-                        "StringEquals": {
-                            f"{args[0].replace('https://', '')}:sub": f"system:serviceaccount:{namespace}:{service_account_name}",
-                            f"{args[0].replace('https://', '')}:aud": "sts.amazonaws.com"
-                        }
-                    }
-                }]
-            })
-        )
+    # def create_irsa_role(self, role_name_prefix: str, namespace: str, service_account_name: str, policy_json: str):
+    #     """
+    #     建立一個綁定特定 K8s ServiceAccount 的 IAM Role
+    #     """
+    #     # 建立 Trust Policy
+    #     assume_role_policy = pulumi.Output.all(self.oidc_provider_url, self.oidc_provider_arn).apply(
+    #         lambda args: json.dumps({
+    #             "Version": "2012-10-17",
+    #             "Statement": [{
+    #                 "Effect": "Allow",
+    #                 "Principal": {"Federated": args[1]},
+    #                 "Action": "sts:AssumeRoleWithWebIdentity",
+    #                 "Condition": {
+    #                     "StringEquals": {
+    #                         f"{args[0].replace('https://', '')}:sub": f"system:serviceaccount:{namespace}:{service_account_name}",
+    #                         f"{args[0].replace('https://', '')}:aud": "sts.amazonaws.com"
+    #                     }
+    #                 }
+    #             }]
+    #         })
+    #     )
 
-        role = aws.iam.Role(f"{self._name}-{role_name_prefix}",
-            assume_role_policy=assume_role_policy,
-            tags={"ManagedBy": "Pulumi", "Component": "EksCluster"},
-            opts=ResourceOptions(parent=self)
-        )
+    #     role = aws.iam.Role(f"{self._name}-{role_name_prefix}",
+    #         assume_role_policy=assume_role_policy,
+    #         tags={"ManagedBy": "Pulumi", "Component": "EksCluster"},
+    #         opts=ResourceOptions(parent=self)
+    #     )
 
-        policy = aws.iam.Policy(f"{self._name}-{role_name_prefix}-policy",
-            policy=policy_json,
-            opts=ResourceOptions(parent=self)
-        )
+    #     policy = aws.iam.Policy(f"{self._name}-{role_name_prefix}-policy",
+    #         policy=policy_json,
+    #         opts=ResourceOptions(parent=self)
+    #     )
 
-        aws.iam.RolePolicyAttachment(f"{self._name}-{role_name_prefix}-attach",
-            role=role.name,
-            policy_arn=policy.arn,
-            opts=ResourceOptions(parent=self)
-        )
+    #     aws.iam.RolePolicyAttachment(f"{self._name}-{role_name_prefix}-attach",
+    #         role=role.name,
+    #         policy_arn=policy.arn,
+    #         opts=ResourceOptions(parent=self)
+    #     )
 
-        return role.arn
+    #     return role.arn
 
-    # --------------------------------------------------------------------------
-    # 方法 B: 封裝好的 ESO 啟用功能 (高階 API)
-    # --------------------------------------------------------------------------
-    def enable_external_secrets(self, namespace="external-secrets", sa_name="external-secrets-sa", ssm_path_prefix="/ai-chatbot/*"):
-        """
-        專門為 External Secrets Operator 建立權限
-        """
-        policy_doc = json.dumps({
-            "Version": "2012-10-17",
-            "Statement": [{
-                "Effect": "Allow",
-                "Action": [
-                    "ssm:GetParameter",
-                    "ssm:GetParameters",
-                    "ssm:GetParametersByPath"
-                ],
-                "Resource": f"arn:aws:ssm:*:*:parameter{ssm_path_prefix}"
-            }]
-        })
+    # # --------------------------------------------------------------------------
+    # # 方法 B: 封裝好的 ESO 啟用功能 (高階 API)
+    # # --------------------------------------------------------------------------
+    # def enable_external_secrets(self, namespace="external-secrets", sa_name="external-secrets-sa", ssm_path_prefix="/ai-chatbot/*"):
+    #     """
+    #     專門為 External Secrets Operator 建立權限
+    #     """
+    #     policy_doc = json.dumps({
+    #         "Version": "2012-10-17",
+    #         "Statement": [{
+    #             "Effect": "Allow",
+    #             "Action": [
+    #                 "ssm:GetParameter",
+    #                 "ssm:GetParameters",
+    #                 "ssm:GetParametersByPath"
+    #             ],
+    #             "Resource": f"arn:aws:ssm:*:*:parameter{ssm_path_prefix}"
+    #         }]
+    #     })
 
-        return self.create_irsa_role("eso-role", namespace, sa_name, policy_doc)
+    #     return self.create_irsa_role("eso-role", namespace, sa_name, policy_doc)

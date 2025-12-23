@@ -2,76 +2,114 @@ import pulumi
 import pulumi_aws as aws
 import pulumi_kubernetes as k8s
 import json
-from typing import Any, Optional, List, Dict
-from pulumi import ResourceOptions
+from typing import Optional, List
 from pathlib import Path
-# import requests
+from pulumi import ResourceOptions, Output, Input
 
 class EksAddons(pulumi.ComponentResource):
-    def __init__(self, name: str, cluster: Any, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, 
+                 name: str, 
+                 cluster_name: Input[str],
+                 vpc_id: Input[str],
+                 oidc_provider_arn: Input[str],
+                 oidc_provider_url: Input[str],
+                 k8s_provider: k8s.Provider,
+                 opts: Optional[ResourceOptions] = None):
+        """
+        EKS Addons (Platform Layer)
+        完全解耦的版本，不依賴 Infrastructure Stack 的物件實體，只依賴 Outputs。
+        
+        :param cluster_name: EKS 叢集名稱 (字串)
+        :param vpc_id: VPC ID (字串)
+        :param oidc_provider_arn: IAM OIDC Provider ARN
+        :param oidc_provider_url: IAM OIDC Provider URL (https://...)
+        :param k8s_provider: 專用的 Kubernetes Provider (必須使用 StackReference 拿到的 kubeconfig 建立)
+        """
         super().__init__("pkg:compute:EksAddons", name, None, opts)
-        self.cluster = cluster
-        self.provider_opts = ResourceOptions(parent=self, provider=cluster.k8s_provider)
-
-    
-    def enable_external_secrets(self, namespace="external-secrets", sa_name="external-secrets-sa", ssm_path_prefix="/ai-chatbot/*"):
-
-        policy_doc = json.dumps({
-            "Version": "2012-10-17",
-            "Statement": [{
-                "Effect": "Allow",
-                "Action": [
-                    "ssm:GetParameter",
-                    "ssm:GetParameters",
-                    "ssm:GetParametersByPath"
-                ],
-                "Resource": f"arn:aws:ssm:*:*:parameter{ssm_path_prefix}"
-            }]
-        })
-
-        return self.cluster.create_irsa_role("eso-role", namespace, sa_name, policy_doc)
-    
-    def install_alb_controller(self, version="1.7.1"):
         
-        # print("Downloading official IAM Policy for ALB Controller...")
-        # policy_url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/install/iam_policy.json"
-        policy_path = Path(__file__).resolve().parents[2] / "policies" / "alb_controller_iam_policy.json"
-        alb_policy_json = policy_path.read_text(encoding="utf-8")
+        self.cluster_name = cluster_name
+        self.vpc_id = vpc_id
+        self.oidc_provider_arn = oidc_provider_arn
+        self.oidc_provider_url = oidc_provider_url
         
-        # try:
+        # 設定所有 K8s 資源的預設 Provider (確保使用傳入的動態 Provider)
+        self.k8s_opts = ResourceOptions(parent=self, provider=k8s_provider)
 
-        #     alb_policy_json = requests.get(policy_url).text
-        # except Exception as e:
-        #     raise Exception(f"Failed to download ALB IAM Policy: {e}")
-
-        # -------------------------------------------------------------
-        #  建立 IRSA Role (這裡沿用你的邏輯，傳入剛下載的完整 JSON)
-        # -------------------------------------------------------------
-        role_arn = self.cluster.create_irsa_role(
-            "alb-role", 
-            "kube-system", 
-            "aws-load-balancer-controller", 
-            alb_policy_json
+    def _create_irsa_role(self, role_name_part: str, namespace: str, sa_name: str, policy_json: str):
+        """
+        [內部方法] 建立 IRSA (IAM Role for Service Accounts)
+        這是從原本 EksCluster 搬過來的邏輯，讓 Addons Stack 能獨立運作。
+        """
+        # 處理 OIDC URL，移除 'https://' 前綴以符合 AWS Trust Policy 格式
+        oidc_domain = Output.from_input(self.oidc_provider_url).apply(
+            lambda url: url.replace("https://", "")
         )
 
-        alb_sa = k8s.core.v1.ServiceAccount(
-            "aws-load-balancer-controller-sa",
+        assume_role_policy = Output.all(oidc_domain, self.oidc_provider_arn).apply(
+            lambda args: json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Principal": {"Federated": args[1]},
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            f"{args[0]}:sub": f"system:serviceaccount:{namespace}:{sa_name}",
+                            f"{args[0]}:aud": "sts.amazonaws.com"
+                        }
+                    }
+                }]
+            })
+        )
+
+        role = aws.iam.Role(f"{self._name}-{role_name_part}-role",
+            assume_role_policy=assume_role_policy,
+            tags={"ManagedBy": "Pulumi", "Component": "EksAddons"},
+            opts=ResourceOptions(parent=self)
+        )
+
+        policy = aws.iam.Policy(f"{self._name}-{role_name_part}-policy",
+            policy=policy_json,
+            opts=ResourceOptions(parent=self)
+        )
+
+        aws.iam.RolePolicyAttachment(f"{self._name}-{role_name_part}-attach",
+            role=role.name,
+            policy_arn=policy.arn,
+            opts=ResourceOptions(parent=self)
+        )
+
+        return role.arn
+
+    def install_alb_controller(self, version="1.7.1"):
+        """
+        安裝 AWS Load Balancer Controller
+        """
+        # 1. 讀取 Policy 文件 (確保路徑正確，建議放在專案根目錄的 policies 資料夾)
+        # 這裡假設檔案結構為: project_root/pkg/compute/eks_addons.py，所以往上兩層找到 policies
+        policy_path = Path(__file__).resolve().parents[2] / "policies" / "alb_controller_iam_policy.json"
+        
+        try:
+            alb_policy_json = policy_path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+             # 如果找不到檔案，拋出更有意義的錯誤提示
+            raise FileNotFoundError(f"Cannot find ALB Policy at {policy_path}. Please ensure the file exists.")
+
+        # 2. 建立 IRSA Role
+        role_arn = self._create_irsa_role("alb", "kube-system", "aws-load-balancer-controller", alb_policy_json)
+
+        # 3. 建立 K8s Service Account
+        alb_sa = k8s.core.v1.ServiceAccount("aws-load-balancer-controller-sa",
             metadata=k8s.meta.v1.ObjectMetaArgs(
                 name="aws-load-balancer-controller",
                 namespace="kube-system",
-                annotations={
-                    "eks.amazonaws.com/role-arn": role_arn,
-                },
+                annotations={"eks.amazonaws.com/role-arn": role_arn},
             ),
-            opts=self.provider_opts,
+            opts=self.k8s_opts,
         )
-        
-        opts = self.provider_opts.merge(ResourceOptions(depends_on=[alb_sa]))
-        # -------------------------------------------------------------
-        # 安裝 Helm Chart
-        # -------------------------------------------------------------
-        self.alb_release = k8s.helm.v3.Release(
-            "alb-controller",
+
+        # 4. 安裝 Helm Chart
+        self.alb_release = k8s.helm.v3.Release("alb-controller",
             k8s.helm.v3.ReleaseArgs(
                 chart="aws-load-balancer-controller",
                 version=version,
@@ -80,67 +118,89 @@ class EksAddons(pulumi.ComponentResource):
                     repo="https://aws.github.io/eks-charts",
                 ),
                 values={
-                    "clusterName": self.cluster.cluster_name,
-
-                    # 你原本 create=True + annotations 沒問題
-                    # 若你之後想「最穩」：可以改成 create=False，自己用 k8s.core.v1.ServiceAccount 建 SA
+                    "clusterName": self.cluster_name,
+                    "region": aws.get_region().name,
+                    "vpcId": self.vpc_id,
                     "serviceAccount": {
-                        "create": False,
+                        "create": False, # 我們上面手動建立了，所以這裡 False
                         "name": "aws-load-balancer-controller",
                     },
-
-                    "region": aws.get_region().name,
-                    "vpcId": self.cluster.vpc_id,
                 },
                 skip_await=False,
                 atomic=True,
                 cleanup_on_fail=True,
+                timeout=900,
             ),
-            opts=opts,
+            # 確保 SA 建立後才安裝 Helm
+            opts=self.k8s_opts.merge(ResourceOptions(depends_on=[alb_sa])),
         )
-                
         return role_arn
 
-    def install_external_secrets(self, version="1.1.0", ssm_path_prefix: str = "/ai-chatbot/*"):
-        # 建立 IAM Role (這會呼叫 eks_cluster.py 裡的邏輯)
-        role_arn = self.cluster.enable_external_secrets(ssm_path_prefix=ssm_path_prefix)
-        
+    def install_external_secrets(self, version="0.9.11", ssm_path_prefix="/ai-chatbot/*"):
+        """
+        安裝 External Secrets Operator (ESO)
+        """
+        # 1. 定義允許存取 SSM Parameter Store 的 Policy
+        policy_doc = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"],
+                "Resource": f"arn:aws:ssm:*:*:parameter{ssm_path_prefix}"
+            }]
+        })
+
+        # 2. 建立 IRSA Role
+        role_arn = self._create_irsa_role("eso", "external-secrets", "external-secrets-sa", policy_doc)
+
+        # 3. 建立 Namespace (ESO 官方建議獨立 Namespace)
         ns = k8s.core.v1.Namespace("external-secrets-ns",
-            metadata={
-                "name": "external-secrets"
-            },
-            opts=ResourceOptions(provider=self.cluster.k8s_provider, parent=self)
+            metadata={"name": "external-secrets"},
+            opts=self.k8s_opts
         )
 
-        opts = self.provider_opts.merge(ResourceOptions(depends_on=[ns]))
-        self.eso_chart = k8s.helm.v3.Chart("external-secrets", k8s.helm.v3.ChartOpts(
-            chart="external-secrets",
-            version=version,
-            namespace=ns.metadata.name,
-            fetch_opts=k8s.helm.v3.FetchOpts(repo="https://charts.external-secrets.io"),
-            values={
-                "installCRDs": True,
-                "serviceAccount": {
-                    "name": "external-secrets-sa",
-                    "annotations": {"eks.amazonaws.com/role-arn": role_arn}
-                }
-            }
-        ), opts=opts)
-        
+        # 4. 安裝 Helm Chart
+        self.eso_chart = k8s.helm.v3.Release("external-secrets",
+            k8s.helm.v3.ReleaseArgs(
+                chart="external-secrets",
+                version=version,
+                namespace=ns.metadata.name,
+                
+                # Release 使用 repository_opts 而不是 fetch_opts
+                repository_opts=k8s.helm.v3.RepositoryOptsArgs(
+                    repo="https://charts.external-secrets.io"
+                ),
+                
+                values={
+                    "installCRDs": True,
+                    "serviceAccount": {
+                        "create": True,
+                        "name": "external-secrets-sa",
+                        "annotations": {"eks.amazonaws.com/role-arn": role_arn}
+                    },
+                    "webhook": {
+                        "timeoutSeconds": 30 # 增加這行防禦性設定
+                    }
+                },
+                
+                # 🔥 關鍵優勢：開啟原子性與失敗清理
+                atomic=True,
+                cleanup_on_fail=True,
+                timeout=900, # 給它多一點時間
+            ),
+            # 🔥 記得加上對 ALB Release 的依賴
+            opts=self.k8s_opts.merge(ResourceOptions(
+                depends_on=[ns, self.alb_release] if hasattr(self, 'alb_release') else [ns]
+            ))
+        )
+
         return role_arn
-    def install_external_dns(self, api_token: str, domain_filter: str, version="1.18.0"):
+
+    def install_external_dns(self, api_token: Input[str], domain_filter: str, version="1.14.3"):
         """
-        安裝 External-DNS 並配置 Cloudflare 整合
-        :param api_token: Cloudflare API Token
-        :param domain_filter: 限制處理的網域 (例如 "yourdomain.com")
+        安裝 External DNS (整合 Cloudflare)
         """
-        
-        # 1. 建立 Cloudflare 存取權限的 IAM Policy
-        # 雖然 External-DNS 是動 Cloudflare，但如果它要跑在 EKS IRSA 上，
-        # 我們通常會給它一個空的或基本的 Role，或者直接使用 Cloudflare Token。
-        # 這裡我們建立一個專屬的 Service Account 並把 Token 注入為 K8s Secret。
-        
-        # 建立 Cloudflare Token Secret
+        # 1. 建立 Secret 存放 Cloudflare Token
         cf_token_secret = k8s.core.v1.Secret("cloudflare-api-token",
             metadata={
                 "name": "cloudflare-api-token",
@@ -149,48 +209,53 @@ class EksAddons(pulumi.ComponentResource):
             string_data={
                 "api-token": api_token
             },
-            opts=self.provider_opts
+            opts=self.k8s_opts
         )
 
-        # 2. 安裝 External-DNS Helm Chart
-        opts=self.provider_opts.merge(
-            pulumi.ResourceOptions(depends_on=[cf_token_secret, self.alb_release])
-        )
-        self.external_dns_chart = k8s.helm.v3.Chart("external-dns", k8s.helm.v3.ChartOpts(
-            chart="external-dns",
-            version=version,
-            namespace="kube-system",
-            fetch_opts=k8s.helm.v3.FetchOpts(repo="https://kubernetes-sigs.github.io/external-dns/"),
-            values={
-                "provider": "cloudflare",
-                "env": [
-                    {
-                        "name": "CF_API_TOKEN",
-                        "valueFrom": {
-                            "secretKeyRef": {
-                                "name": cf_token_secret.metadata["name"],
-                                "key": "api-token"
+        # 2. 安裝 Helm Chart
+        self.external_dns_chart = k8s.helm.v3.Release("external-dns", 
+            k8s.helm.v3.ReleaseArgs(
+                chart="external-dns",
+                version=version,
+                namespace="kube-system",
+                repository_opts=k8s.helm.v3.RepositoryOptsArgs(
+                    repo="https://kubernetes-sigs.github.io/external-dns/"
+                ),
+                values={
+                    "provider": "cloudflare",
+                    # ... (原本的 values 保持不變) ...
+                    "env": [
+                        {
+                            "name": "CF_API_TOKEN",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": cf_token_secret.metadata["name"],
+                                    "key": "api-token"
+                                }
                             }
                         }
+                    ],
+                    "extraArgs": [
+                        "--cloudflare-proxied",
+                        "--source=ingress",
+                        f"--domain-filter={domain_filter}"
+                    ],
+                    "policy": "sync",
+                    "serviceAccount": {
+                        "create": True,
+                        "name": "external-dns"
                     }
-                ],
-                "extraArgs": [
-                    "--cloudflare-proxied", # 開啟 Cloudflare 橘色小雲朵
-                    "--source=ingress",     # 監控 Ingress 資源
-                    f"--domain-filter={domain_filter}"
-                ],
-                "policy": "sync", # 自動建立與刪除紀錄
-                "serviceAccount": {
-                    "create": True,
-                    "name": "external-dns"
-                }
-            }
-        ), opts=opts)
+                },
+                atomic=True,
+                cleanup_on_fail=True,
+            ), 
+            opts=self.k8s_opts.merge(ResourceOptions(depends_on=[cf_token_secret]))
+        )
 
-        return self.external_dns_chart.urn
-
-    def install_bedrock_role(self, service_account: str = "ai-chatbot-sa"):
-
+    def install_bedrock_role(self, service_account: str = "ai-chatbot-sa", namespace: str = "default"):
+        """
+        安裝 Bedrock IAM Role 並使用 EKS Pod Identity 綁定
+        """
         bedrock_policy_json = json.dumps({
             "Version": "2012-10-17",
             "Statement": [
@@ -201,41 +266,48 @@ class EksAddons(pulumi.ComponentResource):
                         "bedrock:InvokeModelWithResponseStream",
                         "bedrock:ListFoundationModels"
                     ],
-                    "Resource": "*" # 如果想更安全，可以指定特定的 Model ARN
+                    "Resource": "*"
                 }
             ]
         })
 
-        bedrock_role = aws.iam.Role("bedrock-role",
+        # 注意：Pod Identity 的 Principal 是 pods.eks.amazonaws.com，與 IRSA 不同
+        bedrock_role = aws.iam.Role(f"{self._name}-bedrock-role",
             assume_role_policy=json.dumps({
                 "Version": "2012-10-17",
                 "Statement": [{
                     "Effect": "Allow",
                     "Principal": {
-                        "Service": "pods.eks.amazonaws.com" # 必須是這個
+                        "Service": "pods.eks.amazonaws.com"
                     },
                     "Action": [
                         "sts:AssumeRole",
-                        "sts:TagSession" # Pod Identity 需要這個來傳遞標籤
+                        "sts:TagSession"
                     ]
                 }]
-            })
+            }),
+            opts=ResourceOptions(parent=self)
         )
 
-        bedrock_policy = aws.iam.Policy("bedrock-policy",
-            policy=bedrock_policy_json
+        bedrock_policy = aws.iam.Policy(f"{self._name}-bedrock-policy",
+            policy=bedrock_policy_json,
+            opts=ResourceOptions(parent=self)
         )
 
-        aws.iam.RolePolicyAttachment("bedrock-policy-attach",
+        aws.iam.RolePolicyAttachment(f"{self._name}-bedrock-policy-attach",
             role=bedrock_role.name,
-            policy_arn=bedrock_policy.arn
+            policy_arn=bedrock_policy.arn,
+            opts=ResourceOptions(parent=self)
         )
 
-        pod_identity_assoc = aws.eks.PodIdentityAssociation("bedrock-assoc",
-            cluster_name=self.cluster.cluster_name, # 確保這裡拿到的是 Cluster 名稱
-            namespace="default",           # 建議確認之後 ArgoCD 是否真的裝在 default
+        # 建立 Pod Identity Association
+        # 這裡需要 cluster_name，我們直接從 self.cluster_name 拿
+        pod_identity_assoc = aws.eks.PodIdentityAssociation(f"{self._name}-bedrock-assoc",
+            cluster_name=self.cluster_name,
+            namespace=namespace,
             service_account=service_account,
-            role_arn=bedrock_role.arn
+            role_arn=bedrock_role.arn,
+            opts=ResourceOptions(parent=self)
         )
 
         return bedrock_role.arn
