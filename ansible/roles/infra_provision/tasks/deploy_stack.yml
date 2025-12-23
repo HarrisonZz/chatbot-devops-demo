@@ -19,11 +19,9 @@
   args:
     chdir: "{{ pulumi_workdir }}"
     executable: /bin/bash
-  environment: "{{ pulumi_env }}"
   register: preview_output
   changed_when: false
-#  no_log: true
-  when: 
+  when:
     - pulumi_run_preview | bool
     - pulumi_action != 'destroy'
 

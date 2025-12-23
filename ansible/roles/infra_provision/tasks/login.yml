@@ -8,15 +8,20 @@
   failed_when: aws_identity.rc != 0
 
 # 2. 登入 Pulumi Backend
-- name: Login to Pulumi Backend
-  ansible.builtin.command: >
-    pulumi login
-    {% if pulumi_backend_url | default('') | length > 0 %} {{ pulumi_backend_url }} {% endif %}
-  environment: "{{ pulumi_env }}"
+- name: Login to Pulumi Cloud (non-interactive)
+  ansible.builtin.command:
+    argv:
+      - pulumi
+      - login
+      - --non-interactive
+  environment:
+    PULUMI_ACCESS_TOKEN: "{{ lookup('env', 'PULUMI_ACCESS_TOKEN') | trim | regex_replace('\r', '') }}"
+    HOME: "{{ pulumi_workdir }}"
   args:
     chdir: "{{ pulumi_workdir }}"
   changed_when: false
 #  no_log: true
+
 
 # 3. 驗證 Pulumi 登入狀態
 - name: Verify Pulumi Backend Connection (WhoAmI)

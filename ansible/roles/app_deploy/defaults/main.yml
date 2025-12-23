@@ -39,6 +39,8 @@ argocd_chart_version: "9.1.7"
 # - 生產環境: "ClusterIP" (配合 Ingress Controller)
 argocd_service_type: "ClusterIP"
 
+pulumi_access_token: "{{ lookup('env', 'PULUMI_ACCESS_TOKEN') | trim | regex_replace('\r', '') }}"
+
 # 高可用模式 (HA)：
 # - true: 啟用 Redis HA, 多個 Replica (生產環境用)
 # - false: 關閉 Redis HA, 單一 Replica (省錢/測試用)
@@ -96,14 +98,8 @@ pulumi_env:
   # 1. 權限：明確傳入 Token
   PULUMI_ACCESS_TOKEN: "{{ pulumi_access_token }}"
   
-  # 2. 路徑：明確將 Venv 放在最前，並使用 lookup 抓取本機 PATH
-  PATH: "{{ pulumi_venv_bin }}:{{ lookup('env', 'PATH') }}"
-  
   # 3. AWS：明確指定 Profile
   AWS_PROFILE: "{{ aws_profile }}"
-  
-  # 4. [SRE 關鍵] 強制指定 Python Command，完全消除 "用錯 Python" 的風險
-  PULUMI_PYTHON_CMD: "{{ pulumi_venv_bin }}/python"
   
   # 5. 優化：讓 Log 即時輸出，不要緩衝 (方便 Debug)
   PYTHONUNBUFFERED: "1"

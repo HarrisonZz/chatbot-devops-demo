@@ -2,3 +2,4 @@ ansible>=10.7.0
 kubernetes>=28.0.0
 boto3>=1.40.63
 botocore>=1.40.63
+jmespath

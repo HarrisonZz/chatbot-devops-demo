@@ -1,0 +1,8 @@
+---
+
+- name: Install Python dependencies
+  ansible.builtin.pip:
+    requirements: "{{ pulumi_requirements }}"
+    extra_args: "--no-cache-dir"
+  args:
+    chdir: "{{ pulumi_workdir }}"
