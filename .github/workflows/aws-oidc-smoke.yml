@@ -1,0 +1,29 @@
+name: aws-oidc-smoke
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-northeast-1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC -> AssumeRole)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::533267110761:role/github-actions-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Who am I (STS)
+        run: |
+          aws sts get-caller-identity
+          echo "AWS_REGION=$AWS_REGION"
+          env | grep -E '^AWS_' | sed 's/=.*/=***masked***/' || true
