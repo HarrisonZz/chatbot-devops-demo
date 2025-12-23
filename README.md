@@ -12,3 +12,9 @@ Least privilege: Bedrock access via IRSA (K8s ServiceAccount ↔ IAM Role)
 Observable by default: structured logs + CloudWatch (and optional ALB access logs to S3)
 
 Rollback-friendly: GitOps + immutable image tags (commit SHA)
+
+
+docker run --rm \
+            -e PULUMI_ACCESS_TOKEN=${{ secrets.PULUMI_ACCESS_TOKEN }} \
+            my-devops-image \
+            pulumi up --yes

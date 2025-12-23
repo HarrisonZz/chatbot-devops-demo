@@ -1,0 +1,7 @@
+config:
+  aws:region: ap-northeast-1
+  addons:eksRef: HarrisonZz-org/ai-chatbot-infra/eks-dev
+  cloudflare:domainName: hrscyj.uk
+  cloudflare:cloudflareZoneID: bcf188e42dd13892ccf65c1bb34bb6a5
+  cloudflare:apiToken:
+    secure: AAABACJsPL8yU0UNlI2opvcXl2od3+A86EPuev340TwFGMcyc0Xvf1AGwUc/s3yMAaVtDaCTlAG3K5lNuhq+hmFRYVuq0+5k
