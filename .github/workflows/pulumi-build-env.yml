@@ -15,7 +15,6 @@ jobs:
       AWS_REGION: ap-northeast-1
       ROLE_ARN: arn:aws:iam::533267110761:role/github-actions-oidc-role
       IMAGE_TAG: local
-      PULUMI_STACK_NET: network-dev   # <- 改成你的 stack
 
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +43,6 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY \
             -e AWS_SESSION_TOKEN \
             -e PULUMI_ACCESS_TOKEN \
-            -e PULUMI_STACK="${PULUMI_STACK_NET}" \
             -v "${PWD}:/work" -w /work/infra \
             pulumi-build-env:${IMAGE_TAG} \
             bash -lc "
@@ -55,7 +53,7 @@ jobs:
               pulumi stack ls || true
 
               echo '== selecting stack =='
-              pulumi stack select \"${PULUMI_STACK}\"
+              pulumi stack select network-dev
               
               echo '== preview =='
               pulumi preview
