@@ -12,13 +12,5 @@ images:
     newTag: v0.1.0
 
 patches:
-  - target:
-      kind: ServiceAccount
-      name: ai-chatbot-sa  # 請確認這跟 base/service-account.yaml 裡的名字一樣
-    patch: |-
-      - op: add
-        path: /metadata/annotations
-        value:
-          eks.amazonaws.com/role-arn: arn:aws:iam::533267110761:role/eks-addons-bedrock-role-e11f02a
   - path: patch-deploy.yaml
   - path: patch-ingress.yaml
