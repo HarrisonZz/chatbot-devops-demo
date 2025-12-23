@@ -62,6 +62,9 @@ RUN curl -fsSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-li
  && rm -f /tmp/pulumi.tgz \
  && pulumi version
 
+COPY infra/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
 RUN set -eux; \
   python3 --version; \
   ansible --version; \
