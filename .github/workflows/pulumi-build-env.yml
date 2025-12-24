@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           docker build . --file Dockerfile --tag pulumi-build-env:${IMAGE_TAG}
 
-      - name: Pulumi up inside container
+      - name: Verify the Container env for image build
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         run: |
@@ -43,18 +43,11 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY \
             -e AWS_SESSION_TOKEN \
             -e PULUMI_ACCESS_TOKEN \
-            -v "${PWD}:/work" -w /work/infra \
+            -v "${PWD}:/work" -w /work/ansible \
             pulumi-build-env:${IMAGE_TAG} \
             bash -lc "
               set -euo pipefail
               aws sts get-caller-identity
               pulumi version
-              echo '== stacks in this project =='
-              pulumi stack ls || true
-
-              echo '== selecting stack =='
-              pulumi stack select network-dev
-              
-              echo '== preview =='
-              pulumi preview
+              ansible-playbook playbooks/bootstrap.yml
             "
