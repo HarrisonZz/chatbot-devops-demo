@@ -24,6 +24,7 @@ spec:
       labels:
         app: ai-chatbot
       annotations:
+
         instrumentation.opentelemetry.io/inject-python: "adot-instrumentation"
     spec:
       # 🚨 綁定身份：讓 Pod 擁有 Bedrock 權限
@@ -33,14 +34,6 @@ spec:
           # 你的 ECR Image
           image: 533267110761.dkr.ecr.ap-northeast-1.amazonaws.com/ai-chatbot-app-dev:v0.1.0
           imagePullPolicy: Always # 開發階段建議 Always，生產環境可改 IfNotPresent
-          command: ["opentelemetry-instrument"] 
-          args: [
-            "streamlit", 
-            "run", 
-            "app.py", 
-            "--server.port", "8501", 
-            "--server.address", "0.0.0.0"
-          ]
           
           # 暴露 Port (Streamlit 預設是 8501)
           ports:
