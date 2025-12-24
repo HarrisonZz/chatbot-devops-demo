@@ -24,6 +24,8 @@ spec:
       # 💡 建議同步調整：將採樣率設為 100% (除錯用) 或 10% (省錢用)
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
+      - name: OTEL_PYTHON_LOG_CORRELATION
+        value: "true"
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION
         value: "true"
       - name: OTEL_LOGS_EXPORTER
