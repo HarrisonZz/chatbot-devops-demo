@@ -2,7 +2,6 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: adot-collector
-  namespace: opentelemetry-operator-system
 spec:
   # 💡 這裡使用你之前在 Pulumi 建立的 IRSA ServiceAccount
   serviceAccount: adot-collector-sa 
