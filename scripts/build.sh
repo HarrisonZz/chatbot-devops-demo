@@ -6,7 +6,7 @@ LOCAL_TEST=0
 APP_DIR="../app"
 APP_NAME="ai-chatbot-app"
 TAG="latest"
-VERSION="v0.2.0"
+VERSION="v0.3.0"
 AWS_REGION="ap-northeast-1"
 # 這裡先預留，等 Pulumi 跑完產生 ECR Repo 後，我們會透過環境變數傳進來
 
@@ -15,7 +15,7 @@ echo "🚀 Starting build process for ${APP_NAME}:${TAG}..."
 # 1. 建置 Docker Image
 # --platform linux/amd64 是為了確保在 Fargate 上能跑 (如果你是用 M1/M2 Mac 開發的話很重要)
 echo "🔨 Building Docker Image..."
-docker build --platform linux/amd64 -t "${APP_NAME}:${TAG}" "${APP_DIR}"
+docker build --no-cache --platform linux/amd64 -t "${APP_NAME}:${TAG}" "${APP_DIR}"
 
 echo "✅ Build success!"
 
