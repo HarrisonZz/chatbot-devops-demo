@@ -80,8 +80,7 @@ jobs:
           "
           
       - name: Provision Platform Addons via Ansible
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        working-directory: scripts
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
