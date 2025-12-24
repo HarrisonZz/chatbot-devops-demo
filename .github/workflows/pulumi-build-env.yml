@@ -78,6 +78,28 @@ jobs:
           bash -lc "
             ansible-playbook playbooks/platform_up.yml -t app --skip-tags preflight
           "
+          
+      - name: Provision Platform Addons via Ansible
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          docker exec ansible-platform-runner \
+          bash -lc "
+            ansible-playbook playbooks/upload_static.yml
+          "
+      - name: Build Application Artifacts
+        run: |
+          set -euo pipefail
+          echo "🚀 Starting Build Script..."
+          
+          # 1. 賦予執行權限
+          docker exec ansible-platform-runner \
+          -w /work/scripts \
+          bash -lc "
+            chmod +x ./build.sh
+            ./build.sh
+          "
 
       - name: Cleanup container
         if: always()
