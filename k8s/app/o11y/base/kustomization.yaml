@@ -3,4 +3,3 @@ kind: Kustomization
 
 resources:
   - adot-collector.yaml
-  - otel_instrumentation.yaml
