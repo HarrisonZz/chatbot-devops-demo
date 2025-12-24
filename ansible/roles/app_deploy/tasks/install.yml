@@ -1,5 +1,25 @@
 ---
 
+- name: Add Helm Repositories
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  loop:
+    - { name: argo, url: "https://argoproj.github.io/argo-helm" }
+    - { name: stakater, url: "https://stakater.github.io/stakater-charts" }
+
+- name: Update Kubeconfig with Specific Profile
+  ansible.builtin.command: >-
+    aws eks update-kubeconfig 
+    --name {{ eks_cluster_name }} 
+    --region {{ aws_region }}
+    --kubeconfig {{ kubeconfig | expanduser }}
+  environment: "{{ pulumi_env | default({}) }}"
+  vars:
+    # 確保這裡使用系統的 AWS CLI，不受 Python 環境影響
+    ansible_python_interpreter: "/usr/bin/python3" 
+  when: update_kubeconfig | default(true)
+
 - name: "Run Pulumi Preview addons-{{ pulumi_stack }}"
   ansible.builtin.shell: |
     set -euo pipefail
@@ -23,26 +43,6 @@
     chdir: "{{ pulumi_workdir }}"
   environment: "{{ pulumi_env }}"
   
-- name: Add Helm Repositories
-  kubernetes.core.helm_repository:
-    name: "{{ item.name }}"
-    repo_url: "{{ item.url }}"
-  loop:
-    - { name: argo, url: "https://argoproj.github.io/argo-helm" }
-    - { name: stakater, url: "https://stakater.github.io/stakater-charts" }
-
-- name: Update Kubeconfig with Specific Profile
-  ansible.builtin.command: >-
-    aws eks update-kubeconfig 
-    --name {{ eks_cluster_name }} 
-    --region {{ aws_region }}
-    --kubeconfig {{ kubeconfig | expanduser }}
-  environment: "{{ pulumi_env | default({}) }}"
-  vars:
-    # 確保這裡使用系統的 AWS CLI，不受 Python 環境影響
-    ansible_python_interpreter: "/usr/bin/python3" 
-  when: update_kubeconfig | default(true)
-
 - name: Ensure namespaces exist
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig | expanduser }}"
