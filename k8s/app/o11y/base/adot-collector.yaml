@@ -25,6 +25,10 @@ spec:
         region: ap-northeast-1
       awsemf:
         region: ap-northeast-1
+      debug:
+        verbosity: normal
+        sampling_initial: 5
+        sampling_thereafter: 100
     service:
       pipelines:
         traces:
