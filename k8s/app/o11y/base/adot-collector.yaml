@@ -11,10 +11,16 @@ spec:
       otlp:
         protocols:
           grpc:
+            endpoint: "0.0.0.0:4317"
           http:
+            endpoint: "0.0.0.0:4318"
     processors:
       batch: 
     exporters:
+      awscloudwatchlogs:
+        log_group_name: "/aws/eks/ai-chatbot/logs"
+        log_stream_name: "ai-chatbot-app"
+        region: ap-northeast-1
       awsxray:
         region: ap-northeast-1
       awsemf:
@@ -24,8 +30,12 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsxray]
+          exporters: [awsxray, debug]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsemf]
+          exporters: [awsemf, debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [awscloudwatchlogs, debug]

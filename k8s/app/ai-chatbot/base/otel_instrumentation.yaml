@@ -3,6 +3,11 @@ kind: Instrumentation
 metadata:
   name: adot-instrumentation
 spec:
+  env:
+    - name: OTEL_PYTHON_LOG_LEVEL
+      value: "debug"
+    - name: OTEL_LOG_LEVEL
+      value: "debug"
   exporter:
     # 告訴 App 把資料丟給剛才建好的 Collector
     endpoint: http://adot-collector-collector.observability.svc.cluster.local:4318
@@ -12,3 +17,14 @@ spec:
     - b3
   python: # 如果你的 App 是 Python
     image: public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.12.1
+    env:
+      # 💡 核心設定：排除掉包含 health 關鍵字的 URL 路徑
+      - name: OTEL_PYTHON_EXCLUDED_URLS
+        value: "_stcore/health,healthz,client/.*/health"
+      # 💡 建議同步調整：將採樣率設為 100% (除錯用) 或 10% (省錢用)
+      - name: OTEL_TRACES_SAMPLER
+        value: "always_on"
+      - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION
+        value: "true
+      - name: OTEL_LOGS_EXPORTER
+        value: "otlp"
