@@ -53,7 +53,6 @@
       kind: Namespace
       metadata:
         name: "{{ item }}"
-  environment: "{{ pulumi_env | default({}) }}"
   loop:
     - "{{ argocd_namespace }}"
     - "{{ reloader_namespace }}"
@@ -97,7 +96,6 @@
         # 禁止 Helm 安裝時自帶的 Ingress，避免跟我們自己的 Ingress Controller 打架
         ingress:
           enabled: false
-  environment: "{{ pulumi_env | default({}) }}"
   when: argocd_enabled | default(true)
 
 - name: Add Stakater Helm repo
@@ -122,5 +120,4 @@
       # 讓它監控所有 Namespaces 裡的 ConfigMap/Secret 變更
       reloader:
         watchGlobally: true
-  environment: "{{ pulumi_env | default({}) }}"
   when: reloader_enabled | default(true)
