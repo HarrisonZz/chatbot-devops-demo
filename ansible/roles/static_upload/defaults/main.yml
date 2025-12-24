@@ -8,12 +8,10 @@ static_cache_control: "max-age=31536000,public"
 # 4. 其他 AWS S3 Sync 的額外參數
 # --delete: 刪除 S3 上有但本地沒有的檔案 (保持完全同步)
 static_sync_opts: "--delete"
-aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
 
 pulumi_env:
   HOME: "{{ lookup('env', 'HOME') }}"
   
   PATH: "{{ lookup('env', 'PATH') }}"
 
-  AWS_PROFILE: "{{ aws_profile }}"
   

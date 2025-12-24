@@ -15,6 +15,12 @@
     {{ static_sync_opts }}
     --cache-control "{{ static_cache_control }}"
   delegate_to: localhost
-  environment: "{{ pulumi_env }}"
+  environment:
+    # 💡 關鍵：確保傳入這些變數，AWS CLI 才會直接使用它們而不去找 Profile
+    AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+    AWS_SESSION_TOKEN: "{{ lookup('env', 'AWS_SESSION_TOKEN') }}"
+    AWS_REGION: "{{ aws_region }}"
+    AWS_PROFILE: ""
   register: sync_result
   changed_when: "'upload:' in sync_result.stdout"
