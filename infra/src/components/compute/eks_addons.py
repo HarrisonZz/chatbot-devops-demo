@@ -135,6 +135,39 @@ class EksAddons(pulumi.ComponentResource):
             opts=self.k8s_opts.merge(ResourceOptions(depends_on=[alb_sa])),
         )
         return role_arn
+    
+    def install_observability_role(self, service_account: str, namespace: str):
+        """
+        建立給 ADOT Collector 或 App Pod 使用的觀測性角色 (CloudWatch + X-Ray)
+        """
+        obs_policy_json = json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:DescribeLogStreams",
+                        "cloudwatch:PutMetricData",
+                        "xray:PutTraceSegments",
+                        "xray:PutTelemetryRecords",
+                        "xray:GetSamplingRules",
+                        "xray:GetSamplingTargets",
+                        "xray:GetSamplingStatisticSummaries"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        })
+
+        return self._create_irsa_role(
+            role_name_part="adot-obs",
+            namespace=namespace,
+            sa_name=service_account,
+            policy_json=obs_policy_json
+        )
 
     def install_external_secrets(self, version="0.9.11", ssm_path_prefix="/ai-chatbot/*"):
         """
@@ -195,6 +228,38 @@ class EksAddons(pulumi.ComponentResource):
         )
 
         return role_arn
+    
+    def install_cert_manager(self):
+        """
+        使用 Helm Release 安裝 Cert-manager (ADOT 的強制前置組件)
+        """
+        # 建立 Namespace
+        ns = k8s.core.v1.Namespace(
+            "cert-manager-ns",
+            metadata={"name": "cert-manager"},
+            opts=self.k8s_opts
+        )
+
+        # 透過 Helm Release 安裝
+        cert_manager = k8s.helm.v3.Release(
+            "cert-manager",
+            k8s.helm.v3.ReleaseArgs(
+                chart="cert-manager",
+                version="v1.13.0",
+                namespace=ns.metadata["name"],
+                repository_opts=k8s.helm.v3.RepositoryOptsArgs(
+                    repo="https://charts.jetstack.io",
+                ),
+                # 重要：必須安裝 CRD，否則 ADOT 無法運作
+                values={
+                    "installCRDs": True,
+                },
+                # 確保 Helm 等待所有資源 Ready
+                wait_for_jobs=True,
+            ),
+            opts=pulumi.ResourceOptions(parent=ns, depends_on=[ns])
+        )
+        return cert_manager
 
     def install_external_dns(self, api_token: Input[str], domain_filter: str, version="1.14.3"):
         """
