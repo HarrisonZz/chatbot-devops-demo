@@ -113,34 +113,12 @@ def deploy(env: str):
     # D. 安裝 CloudWatch & X-Ray 觀測性權限
     # 通常建議給 ADOT Collector 使用，或是直接給你的 App Pod SA
 
-    cert_manager_release = addons.install_cert_manager()
-
     obs_role_arn = addons.install_observability_role(
         service_account="adot-collector-sa", # 或是你的應用程式 SA 名稱
         namespace="observability"           # 建議放在獨立的 namespace
     )
 
-    adot_addon = aws.eks.Addon(f"{cluster_name}-adot",
-        cluster_name=cluster_name,
-        addon_name="adot",
-        service_account_role_arn=obs_role_arn,
-        resolve_conflicts_on_update="PRESERVE",
-        opts=pulumi.ResourceOptions(
-            depends_on=[cert_manager_release] # 💡 確保 Cert-manager 的 Webhook 已就緒
-        )
-    )
 
-    adot_sa = k8s.core.v1.ServiceAccount(
-        "adot-collector-sa",
-        metadata={
-            "name": "adot-collector-sa",
-            "namespace": "opentelemetry-operator-system",
-            "annotations": {
-                "eks.amazonaws.com/role-arn": obs_role_arn # 💡 自動追蹤變化
-            }
-        },
-        opts=pulumi.ResourceOptions(depends_on=[adot_addon]) # 確保 Addon 裝好才建 SA
-    )
 
     # ------------------------------------------------------------------
     # 5. Cloudflare 相關 (DNS & Certs)

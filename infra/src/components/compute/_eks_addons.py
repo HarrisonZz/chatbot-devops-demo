@@ -130,6 +130,7 @@ class EksAddons(pulumi.ComponentResource):
         ), opts=opts)
         
         return role_arn
+        
     def install_external_dns(self, api_token: str, domain_filter: str, version="1.18.0"):
         """
         安裝 External-DNS 並配置 Cloudflare 整合

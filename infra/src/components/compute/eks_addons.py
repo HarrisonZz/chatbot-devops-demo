@@ -162,12 +162,45 @@ class EksAddons(pulumi.ComponentResource):
             ]
         })
 
-        return self._create_irsa_role(
+        cert_manager_release = self.install_cert_manager()
+
+        obs_role_arn = self._create_irsa_role(
             role_name_part="adot-obs",
             namespace=namespace,
             sa_name=service_account,
             policy_json=obs_policy_json
         )
+
+        adot_addon = aws.eks.Addon(f"{self.cluster_name}-adot",
+            cluster_name=self.cluster_name,
+            addon_name="adot",
+            service_account_role_arn=obs_role_arn,
+            resolve_conflicts_on_update="PRESERVE",
+            opts=pulumi.ResourceOptions(
+                depends_on=[cert_manager_release] # 💡 確保 Cert-manager 的 Webhook 已就緒
+            )
+        )
+
+        k8s.core.v1.Namespace("observability-ns",
+            metadata=k8s.meta.v1.ObjectMetaArgs(
+                name=namespace,
+            ),
+            opts=pulumi.ResourceOptions(parent=self) # 假設這是在 EksAddons 類別內
+        )
+
+        k8s.core.v1.ServiceAccount(
+            "adot-collector-sa",
+            metadata={
+                "name": "adot-collector-sa",
+                "namespace": "observability",
+                "annotations": {
+                    "eks.amazonaws.com/role-arn": obs_role_arn # 💡 自動追蹤變化
+                }
+            },
+            opts=pulumi.ResourceOptions(depends_on=[adot_addon]) # 確保 Addon 裝好才建 SA
+        )
+
+        return obs_role_arn
 
     def install_external_secrets(self, version="0.9.11", ssm_path_prefix="/ai-chatbot/*"):
         """
