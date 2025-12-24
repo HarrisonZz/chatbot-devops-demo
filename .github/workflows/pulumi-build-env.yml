@@ -63,6 +63,15 @@ jobs:
           bash -lc "
             ansible-playbook playbooks/platform_up.yml -t infra
           "
+      - name: Provision Platform Addons via Ansible
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          docker exec ansible-platform-runner \
+          bash -lc "
+            ansible-playbook playbooks/platform_up.yml -t app --skip-tags preflight
+          "
 
       - name: Cleanup container
         if: always()
