@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eks-observability-stack
+  namespace: argocd # ArgoCD 所在的 Namespace
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: apps
+  source:
+    repoURL: 'https://github.com/HarrisonZz/chatbot-devops-demo'
+    targetRevision: main
+    path: 'k8s/app/o11y/dev' # 指向上面檔案所在的目錄
+    directory:
+      recurse: false 
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: observability # 直接佈署到 ADOT 預設目錄
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true # 如果 namespace 還沒建，自動建立

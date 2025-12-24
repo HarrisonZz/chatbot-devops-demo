@@ -4,6 +4,7 @@ metadata:
   name: ai-chatbot-app
   annotations:
     reloader.stakater.com/auto: "true"
+    instrumentation.opentelemetry.io/inject-python: "true"
   labels:
     app: ai-chatbot
     app.kubernetes.io/name: ai-chatbot

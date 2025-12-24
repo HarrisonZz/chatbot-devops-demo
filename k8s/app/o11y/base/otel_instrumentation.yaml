@@ -1,0 +1,14 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: adot-instrumentation
+spec:
+  exporter:
+    # 告訴 App 把資料丟給剛才建好的 Collector
+    endpoint: http://adot-collector.observability.svc.cluster.local:4317
+  propagators:
+    - tracecontext
+    - baggage
+    - b3
+  python: # 如果你的 App 是 Python
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-python:latest

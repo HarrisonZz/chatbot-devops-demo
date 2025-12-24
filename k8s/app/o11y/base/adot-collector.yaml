@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: adot-collector
+  namespace: opentelemetry-operator-system
+spec:
+  # 💡 這裡使用你之前在 Pulumi 建立的 IRSA ServiceAccount
+  serviceAccount: adot-collector-sa 
+  mode: deployment
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch: 
+    exporters:
+      awsxray:
+        region: ap-northeast-1
+      awsemf:
+        region: ap-northeast-1
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [awsxray]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [awsemf]
