@@ -87,6 +87,8 @@ jobs:
             ansible-playbook playbooks/upload_static.yml
           "
       - name: Build Application Artifacts
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         working-directory: scripts
         run: |
           set -euo pipefail
