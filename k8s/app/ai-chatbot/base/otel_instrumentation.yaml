@@ -11,4 +11,4 @@ spec:
     - baggage
     - b3
   python: # 如果你的 App 是 Python
-    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-python:latest
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-python:v0.12.1
