@@ -73,8 +73,8 @@ def deploy(env: str):
     }))
     
     k8s_provider = k8s.Provider("k8s-provider",
-        kubeconfig=kubeconfig,
-        enable_server_side_apply=False,
+#        kubeconfig=kubeconfig,
+#        enable_server_side_apply=False,
     )
     
     # ------------------------------------------------------------------
