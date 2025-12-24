@@ -30,3 +30,7 @@ spec:
         value: "true"
       - name: OTEL_LOGS_EXPORTER
         value: "otlp"
+      - name: OTEL_PYTHON_LOG_LEVEL
+        value: "info"
+      - name: OTEL_LOG_LEVEL
+        value: "info"
