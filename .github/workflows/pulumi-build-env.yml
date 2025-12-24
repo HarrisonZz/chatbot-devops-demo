@@ -80,7 +80,6 @@ jobs:
           "
           
       - name: Provision Platform Addons via Ansible
-        working-directory: scripts
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -88,11 +87,12 @@ jobs:
             ansible-playbook playbooks/upload_static.yml
           "
       - name: Build Application Artifacts
+        working-directory: scripts
         run: |
           set -euo pipefail
           echo "🚀 Starting Build Script..."
-          chmod +x ./scripts/build.sh
-          ./scripts/build.sh
+          chmod +x ./build.sh
+          ./build.sh
 
       - name: Cleanup container
         if: always()
