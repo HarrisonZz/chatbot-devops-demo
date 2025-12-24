@@ -21,6 +21,5 @@
     AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
     AWS_SESSION_TOKEN: "{{ lookup('env', 'AWS_SESSION_TOKEN') }}"
     AWS_REGION: "{{ aws_region }}"
-    AWS_PROFILE: ""
   register: sync_result
   changed_when: "'upload:' in sync_result.stdout"
