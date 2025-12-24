@@ -1,6 +1,6 @@
 Previewing update (eks-dev)
 
-View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previews/b429f6bd-543b-46c6-aa55-a472459ec138
+View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previews/1382420f-07ba-48ba-81e1-9309a85932a1
 
 + pulumi:pulumi:Stack: (create)
     [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:pulumi:Stack::ai-chatbot-infra-eks-dev]
@@ -13,14 +13,14 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
         outputs          : {
             clusterName     : "eks-dev"
             privateSubnetIds: [
-                [0]: "subnet-034fffed1e4c78040"
-                [1]: "subnet-041f3909343248f1f"
+                [0]: "subnet-0b6cfa868250c0b45"
+                [1]: "subnet-08946b5ad00b08d61"
             ]
             publicSubnetIds : [
-                [0]: "subnet-04a0f4e7cdfb1ccca"
-                [1]: "subnet-0260cdb3d9df0d3d9"
+                [0]: "subnet-0b04aae4b8164ca56"
+                [1]: "subnet-01ffd83afabc4ed40"
             ]
-            vpcId           : "vpc-00ea42497f417bc5e"
+            vpcId           : "vpc-0f24bac1190ce64ff"
         }
         + aws:iam/role:Role: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/role:Role::eks-cluster-role]
@@ -40,7 +40,7 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
 
             forceDetachPolicies: false
             maxSessionDuration : 3600
-            name               : "eks-cluster-role-3018a2c"
+            name               : "eks-cluster-role-8fd9690"
             path               : "/"
             tags               : {
                 ManagedBy: "pulumi"
@@ -66,7 +66,7 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
 
             forceDetachPolicies: false
             maxSessionDuration : 3600
-            name               : "eks-node-role-3aacc71"
+            name               : "eks-node-role-1e7141a"
             path               : "/"
             tags               : {
                 ManagedBy: "pulumi"
@@ -74,11 +74,6 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
             tagsAll            : {
                 ManagedBy: "pulumi"
             }
-        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
-            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSServicePolicy]
-            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
-            policyArn : "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
-            role      : "eks-cluster-role-3018a2c"
         + aws:ec2/launchTemplate:LaunchTemplate: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:ec2/launchTemplate:LaunchTemplate::eks-lt]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
@@ -88,7 +83,7 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
                 httpPutResponseHopLimit: 2
                 httpTokens             : "required"
             }
-            name           : "eks-lt-185a21a"
+            name           : "eks-lt-8466488"
             tags           : {
                 ManagedBy: "pulumi"
             }
@@ -96,10 +91,10 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
                 ManagedBy: "pulumi"
             }
         + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
-            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSClusterPolicy]
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSServicePolicy]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
-            policyArn : "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-            role      : "eks-cluster-role-3018a2c"
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+            role      : "eks-cluster-role-8fd9690"
         + aws:eks/cluster:Cluster: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:eks/cluster:Cluster::eks-cluster]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
@@ -117,58 +112,35 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
                 endpointPrivateAccess: true
                 endpointPublicAccess : true
                 subnetIds            : [
-                    [0]: "subnet-034fffed1e4c78040"
-                    [1]: "subnet-041f3909343248f1f"
+                    [0]: "subnet-0b6cfa868250c0b45"
+                    [1]: "subnet-08946b5ad00b08d61"
                 ]
             }
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-cluster-AmazonEKSClusterPolicy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+            role      : "eks-cluster-role-8fd9690"
         + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEKSWorkerNodePolicy]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
             policyArn : "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-            role      : "eks-node-role-3aacc71"
-        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
-            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEKS_CNI_Policy]
-            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
-            policyArn : "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-            role      : "eks-node-role-3aacc71"
+            role      : "eks-node-role-1e7141a"
         + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEC2ContainerRegistryReadOnly]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
             policyArn : "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-            role      : "eks-node-role-3aacc71"
+            role      : "eks-node-role-1e7141a"
+        + aws:iam/rolePolicyAttachment:RolePolicyAttachment: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/rolePolicyAttachment:RolePolicyAttachment::eks-node-AmazonEKS_CNI_Policy]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            policyArn : "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+            role      : "eks-node-role-1e7141a"
     + aws:eks/addon:Addon: (create)
         [urn=urn:pulumi:eks-dev::ai-chatbot-infra::aws:eks/addon:Addon::pod-identity-agent]
         [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
         addonName  : "eks-pod-identity-agent"
         clusterName: "eks-dev"
-        + aws:eks/nodeGroup:NodeGroup: (create)
-            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:eks/nodeGroup:NodeGroup::eks-ng]
-            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
-            clusterName   : "eks-dev"
-            instanceTypes : [
-                [0]: "t3.large"
-            ]
-            launchTemplate: {
-                id        : [unknown]
-                version   : [unknown]
-            }
-            nodeGroupName : "eks-ng-c65da04"
-            nodeRoleArn   : [unknown]
-            scalingConfig : {
-                desiredSize: 2
-                maxSize    : 3
-                minSize    : 1
-            }
-            subnetIds     : [
-                [0]: "subnet-034fffed1e4c78040"
-                [1]: "subnet-041f3909343248f1f"
-            ]
-            tags          : {
-                ManagedBy: "pulumi"
-            }
-            tagsAll       : {
-                ManagedBy: "pulumi"
-            }
         + aws:iam/openIdConnectProvider:OpenIdConnectProvider: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:iam/openIdConnectProvider:OpenIdConnectProvider::eks-oidc]
             [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
@@ -183,6 +155,34 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
             }
             thumbprintLists: [unknown]
             url            : [unknown]
+        + aws:eks/nodeGroup:NodeGroup: (create)
+            [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$aws:eks/nodeGroup:NodeGroup::eks-ng]
+            [provider=urn:pulumi:eks-dev::ai-chatbot-infra::pulumi:providers:aws::default_6_83_2::04da6b54-80e4-46f7-96ec-b56ff0331ba9]
+            clusterName   : "eks-dev"
+            instanceTypes : [
+                [0]: "t3.large"
+            ]
+            launchTemplate: {
+                id        : [unknown]
+                version   : [unknown]
+            }
+            nodeGroupName : "eks-ng-84e41d1"
+            nodeRoleArn   : [unknown]
+            scalingConfig : {
+                desiredSize: 2
+                maxSize    : 3
+                minSize    : 1
+            }
+            subnetIds     : [
+                [0]: "subnet-0b6cfa868250c0b45"
+                [1]: "subnet-08946b5ad00b08d61"
+            ]
+            tags          : {
+                ManagedBy: "pulumi"
+            }
+            tagsAll       : {
+                ManagedBy: "pulumi"
+            }
         + pulumi:providers:kubernetes: (create)
             [urn=urn:pulumi:eks-dev::ai-chatbot-infra::pkg:compute:EksCluster$pulumi:providers:kubernetes::eks-k8s-provider]
             kubeconfig: [unknown]
@@ -192,7 +192,7 @@ View Live: https://app.pulumi.com/HarrisonZz-org/ai-chatbot-infra/eks-dev/previe
     clusterName    : "eks-dev"
     env            : "dev"
     kubeconfig     : [unknown]
-    nodeGroupName  : "eks-ng-c65da04"
+    nodeGroupName  : "eks-ng-84e41d1"
     oidcProviderArn: [unknown]
     oidcProviderUrl: [unknown]
 Resources:

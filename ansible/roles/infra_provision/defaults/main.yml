@@ -30,7 +30,7 @@ pulumi_env:
   # 1. 權限：明確傳入 Token
   environment:
   # 3. AWS：明確指定 Profile
-  AWS_PROFILE: "{{ aws_profile }}"
+#  AWS_PROFILE: "{{ aws_profile }}"
   
   # 5. 優化：讓 Log 即時輸出，不要緩衝 (方便 Debug)
   PYTHONUNBUFFERED: "1"
