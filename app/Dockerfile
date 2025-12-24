@@ -16,6 +16,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 COPY requirements.txt .
 RUN pip install --default-timeout=1000 --no-cache-dir -r requirements.txt
 
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    opentelemetry-api \
+    opentelemetry-sdk \
+    opentelemetry-distro \
+    opentelemetry-exporter-otlp \
+    opentelemetry-instrumentation \
+    opentelemetry-instrumentation-logging \
+    opentelemetry-instrumentation-botocore
+
+RUN opentelemetry-bootstrap -a install
+
 # 3. 複製應用程式代碼
 COPY app.py .
 COPY src/ ./src/
@@ -28,4 +40,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
 # 6. 啟動指令
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["opentelemetry-instrument"]
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
