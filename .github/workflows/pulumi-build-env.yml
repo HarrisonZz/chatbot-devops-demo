@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
-            ansible-playbook playbooks/bootstrap.yaml
+            ansible-playbook playbooks/bootstrap.yml
           "
       - name: Provision Platform via Ansible
         env:
@@ -61,7 +61,7 @@ jobs:
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
-            ansible-playbook playbooks/platform_up.yaml -t infra
+            ansible-playbook playbooks/platform_up.yml -t infra
           "
 
       - name: Cleanup container
