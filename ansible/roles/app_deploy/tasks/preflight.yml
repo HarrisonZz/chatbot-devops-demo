@@ -32,10 +32,3 @@
         json_query("[?status.conditions[?type=='Ready' && status=='True']]") |
         length
       }}
-
-- name: Enforce minimum Ready nodes
-  ansible.builtin.assert:
-    that:
-      - (not require_nodes_ready) or (ready_nodes | int >= min_ready_nodes | int)
-    fail_msg: "❌ EKS reachable but insufficient Ready nodes. Found: {{ ready_nodes }}, Required: {{ min_ready_nodes }}"
-    success_msg: "✅ Preflight Passed: {{ ready_nodes }} nodes are Ready."

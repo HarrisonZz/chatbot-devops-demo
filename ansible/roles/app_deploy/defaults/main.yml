@@ -42,6 +42,8 @@ argocd_service_type: "ClusterIP"
 
 pulumi_access_token: "{{ lookup('env', 'PULUMI_ACCESS_TOKEN') | trim | regex_replace('\r', '') }}"
 
+pulumi_workdir: "{{ playbook_dir }}/../../infra"
+pulumi_stack: dev
 # 高可用模式 (HA)：
 # - true: 啟用 Redis HA, 多個 Replica (生產環境用)
 # - false: 關閉 Redis HA, 單一 Replica (省錢/測試用)
@@ -98,9 +100,6 @@ pulumi_env:
   HOME: "{{ lookup('env', 'HOME') }}"
   # 1. 權限：明確傳入 Token
   PULUMI_ACCESS_TOKEN: "{{ pulumi_access_token }}"
-  
-  # 3. AWS：明確指定 Profile
-  AWS_PROFILE: "{{ aws_profile }}"
   
   # 5. 優化：讓 Log 即時輸出，不要緩衝 (方便 Debug)
   PYTHONUNBUFFERED: "1"

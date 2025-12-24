@@ -1,5 +1,27 @@
 ---
 
+- name: "Run Pulumi Preview addons-{{ pulumi_stack }}"
+  ansible.builtin.shell: |
+    set -euo pipefail
+    pulumi preview --stack addons-{{ pulumi_stack }}
+    chdir: "{{ pulumi_workdir }}"
+    executable: /bin/bash
+  register: preview_output
+  changed_when: false
+
+# 2. 顯示結果
+- name: Show Preview Result
+  ansible.builtin.debug:
+    var: preview_output.stdout_lines
+  when: preview_output.stdout_lines is defined
+
+- name: Up [addons-{{ pulumi_stack }}]
+  ansible.builtin.command: >-
+    pulumi up --stack addons-{{ pulumi_stack }} --yes --skip-preview
+  args:
+    chdir: "{{ pulumi_workdir }}"
+  environment: "{{ pulumi_env }}"
+  
 - name: Add Helm Repositories
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
