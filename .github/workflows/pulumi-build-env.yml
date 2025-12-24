@@ -3,6 +3,12 @@ name: Docker Image CI
 on:
   push:
     branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '執行動作 (up 或 destroy)'
+        required: false
+        default: 'up'
 
 permissions:
   id-token: write
