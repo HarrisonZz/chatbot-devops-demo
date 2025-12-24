@@ -4,7 +4,6 @@ metadata:
   name: ai-chatbot-app
   annotations:
     reloader.stakater.com/auto: "true"
-    instrumentation.opentelemetry.io/inject-python: "true"
   labels:
     app: ai-chatbot
     app.kubernetes.io/name: ai-chatbot
@@ -24,6 +23,9 @@ spec:
     metadata:
       labels:
         app: ai-chatbot
+      annotations:
+        # 💡 就是這行，這是觸發 ADOT 注入的關鍵
+        instrumentation.opentelemetry.io/inject-python: "true"
     spec:
       # 🚨 綁定身份：讓 Pod 擁有 Bedrock 權限
       serviceAccountName: ai-chatbot-sa
