@@ -4,6 +4,7 @@
   ansible.builtin.shell: |
     set -euo pipefail
     pulumi preview --stack addons-{{ pulumi_stack }}
+  args:
     chdir: "{{ pulumi_workdir }}"
     executable: /bin/bash
   register: preview_output
