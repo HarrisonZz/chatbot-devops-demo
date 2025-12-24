@@ -94,12 +94,10 @@ jobs:
           echo "🚀 Starting Build Script..."
           
           # 1. 賦予執行權限
-          docker exec ansible-platform-runner \
-          -w /work/scripts \
-          bash -lc "
-            chmod +x ./build.sh
-            ./build.sh
-          "
+          docker exec \
+            -w /work/scripts \
+            ansible-platform-runner \
+            bash -c "chmod +x ./build.sh && ./build.sh"
 
       - name: Cleanup container
         if: always()
