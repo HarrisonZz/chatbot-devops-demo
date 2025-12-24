@@ -14,7 +14,9 @@ Observable by default: structured logs + CloudWatch (and optional ALB access log
 Rollback-friendly: GitOps + immutable image tags (commit SHA)
 
 
-docker run --rm \
-            -e PULUMI_ACCESS_TOKEN=${{ secrets.PULUMI_ACCESS_TOKEN }} \
-            my-devops-image \
-            pulumi up --yes
+docker run --rm -it --env-file .env  \
+    -v "$PWD:/work" \
+    -v "$HOME/.aws:/root/.aws:ro" \  
+    -e AWS_REGION=ap-northeast-1 \ 
+    -e AWS_PROFILE=default \
+    devops-toolbox:local

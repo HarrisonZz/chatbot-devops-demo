@@ -15,6 +15,7 @@ pulumi_project_list:
 # --- 核心設定 ---
 pulumi_action: up
 pulumi_backend_url: ""
+pulumi_stack: dev
 
 # --- 行為控制 ---
 pulumi_run_preview: true

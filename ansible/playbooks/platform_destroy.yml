@@ -18,3 +18,4 @@
     - role: infra_provision
       vars:
         pulumi_action: destroy
+      tags: [infra]

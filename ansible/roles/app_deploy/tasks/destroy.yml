@@ -27,7 +27,7 @@
         kind: Ingress
         metadata:
           name: ai-chatbot-ingress
-          namespace: default
+          namespace: "{{ app_namespace }}"
     register: ingress_delete
     until: ingress_delete is succeeded
     retries: 3

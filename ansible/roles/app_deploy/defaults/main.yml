@@ -24,6 +24,7 @@ alb_fixed_name: "ai-chatbot-alb"
 # ==============================================================================
 # 2. ArgoCD Configuration (GitOps 核心)
 # ==============================================================================
+app_namespace: "ai-chatbot-dev"
 
 # 是否安裝 ArgoCD
 install_argocd: true
