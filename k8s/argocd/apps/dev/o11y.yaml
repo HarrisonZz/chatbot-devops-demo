@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: 'https://github.com/HarrisonZz/chatbot-devops-demo'
     targetRevision: main
-    path: 'k8s/app/o11y/dev' # 指向上面檔案所在的目錄
+    path: 'k8s/app/o11y/overlays/dev' # 指向上面檔案所在的目錄
     directory:
       recurse: false 
   destination:
