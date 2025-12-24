@@ -25,6 +25,6 @@ spec:
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
       - name: OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION
-        value: "true
+        value: "true"
       - name: OTEL_LOGS_EXPORTER
         value: "otlp"
