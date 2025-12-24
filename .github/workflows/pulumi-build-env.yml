@@ -92,12 +92,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "🚀 Starting Build Script..."
-          
-          # 1. 賦予執行權限
-          docker exec \
-            -w /work/scripts \
-            ansible-platform-runner \
-            bash -c "chmod +x ./build.sh && ./build.sh"
+          chmod +x ./scripts/build.sh
+          ./scripts/build.sh
 
       - name: Cleanup container
         if: always()
