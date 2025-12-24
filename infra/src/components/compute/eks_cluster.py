@@ -192,7 +192,7 @@ class EksCluster(pulumi.ComponentResource):
         aws.eks.AccessPolicyAssociation(f"{name}-github-actions-policy",
             cluster_name=cluster.name,
             principal_arn=github_role_arn,
-            policy_arn="arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy",
+            policy_arn="arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy",
             access_scope=aws.eks.AccessPolicyAssociationAccessScopeArgs(
                 type="cluster",
             ),
