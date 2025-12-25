@@ -5,8 +5,12 @@ on:
     inputs:
       action:
         description: '執行動作 (up 或 destroy)'
-        required: false
+        required: true
         default: 'up'
+        type: choice
+        options:
+          - up
+          - destroy
 
 permissions:
   id-token: write
@@ -19,9 +23,18 @@ jobs:
       AWS_REGION: ap-northeast-1
       ROLE_ARN: arn:aws:iam::533267110761:role/github-actions-oidc-role
       IMAGE_TAG: local
+      ACTION: ${{ inputs.action }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate action
+        run: |
+          set -euo pipefail
+          case "${ACTION}" in
+            up|destroy) echo "ACTION=${ACTION}" ;;
+            *) echo "Invalid action: ${ACTION}" >&2; exit 1 ;;
+          esac
 
       - name: Configure AWS credentials (OIDC -> AssumeRole)
         uses: aws-actions/configure-aws-credentials@v4
@@ -58,9 +71,8 @@ jobs:
           bash -lc "
             ansible-playbook playbooks/bootstrap.yml
           "
-      - name: Provision Platform via Ansible
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      - name: Provision Platform (infra) via Ansible
+        if: ${{ inputs.action == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -68,8 +80,7 @@ jobs:
             ansible-playbook playbooks/platform_up.yml -t infra
           "
       - name: Provision Platform Addons via Ansible
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        if: ${{ inputs.action == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -77,7 +88,8 @@ jobs:
             ansible-playbook playbooks/platform_up.yml -t app --skip-tags preflight
           "
           
-      - name: Provision Platform Addons via Ansible
+      - name: Upload static assets via Ansible
+        if: ${{ inputs.action == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -85,6 +97,7 @@ jobs:
             ansible-playbook playbooks/upload_static.yml
           "
       - name: Build Application Artifacts
+        if: ${{ inputs.action == 'up' }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         working-directory: scripts
@@ -93,6 +106,26 @@ jobs:
           echo "🚀 Starting Build Script..."
           chmod +x ./build.sh
           ./build.sh
+
+      # =========================
+      # DESTROY path
+      # 重要：建議先 app 再 infra
+      # =========================
+      - name: Destroy Platform Addons (app) via Ansible
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          set -euo pipefail
+          docker exec ansible-platform-runner bash -lc "
+            ansible-playbook playbooks/platform_destroy.yml -t app
+          "
+      
+      - name: Destroy Platform Addons (Infra) via Ansible
+        if: ${{ inputs.action == 'destroy' }}
+        run: |
+          set -euo pipefail
+          docker exec ansible-platform-runner bash -lc "
+            ansible-playbook playbooks/platform_destroy.yml -t infra
+          "    
 
       - name: Cleanup container
         if: always()
