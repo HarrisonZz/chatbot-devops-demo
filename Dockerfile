@@ -43,7 +43,7 @@ RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VE
  && rm -rf /tmp/aws /tmp/awscliv2.zip \
  && aws --version
 
-ENV KUBECONFIG="~/.kubeconfig"
+ENV KUBECONFIG="~/.kube/config"
 RUN curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl \
  && chmod +x /usr/local/bin/kubectl \
  && kubectl version --client
