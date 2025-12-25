@@ -65,6 +65,7 @@ jobs:
             tail -f /dev/null
 
       - name: Verify the Container env for image build
+        if: ${{ inputs.action == 'down' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -72,7 +73,7 @@ jobs:
             ansible-playbook playbooks/bootstrap.yml
           "
       - name: Provision Platform (infra) via Ansible
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ inputs.action == 'down' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
