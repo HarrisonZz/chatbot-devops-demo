@@ -39,7 +39,7 @@ spec:
           - dimensions: [["service.name", "model_id"]]
             metric_name_selectors: ["latency"]
       debug:
-        verbosity: normal
+        verbosity: detailed
         sampling_initial: 5
         sampling_thereafter: 100
     service:
@@ -47,12 +47,12 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsxray]
+          exporters: [awsxray, debug]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsemf]
+          exporters: [awsemf, debug]
         logs:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [awscloudwatchlogs]
+          exporters: [awscloudwatchlogs, debug]
