@@ -185,7 +185,7 @@ class EksCluster(pulumi.ComponentResource):
             cluster_name=cluster.name,
             principal_arn=github_role_arn,
             type="STANDARD",
-            opts=pulumi.ResourceOptions(parent=self, depends_on=[cluster])
+            opts=pulumi.ResourceOptions(parent=self, depends_on=[cluster], delete_before_replace=True)
         )
 
         # 3. 關聯 Admin 策略 (給予進門後的管理權限)

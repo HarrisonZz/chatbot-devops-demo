@@ -185,7 +185,10 @@ class EksAddons(pulumi.ComponentResource):
             resolve_conflicts_on_update="PRESERVE",
             opts=pulumi.ResourceOptions(
                 parent=self,
-                depends_on=[cert_manager_release] # 💡 確保 Cert-manager 的 Webhook 已就緒
+                depends_on=[
+                    cert_manager_release, 
+                    alb_controller_release
+                ] # 💡 確保 Cert-manager 的 Webhook 已就緒
             )
         )
 
