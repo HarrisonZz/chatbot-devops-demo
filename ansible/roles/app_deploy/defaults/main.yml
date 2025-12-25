@@ -4,7 +4,7 @@
 # ==============================================================================
 
 # 指定 Context (選填)：若為空字串，則使用 kubeconfig 當前選中的 context
-kubeconfig: "~/.kubeconfig"
+kubeconfig: "~/.kube/config"
 kubecontext: ""
 aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
 
@@ -95,7 +95,7 @@ reloader_values:
 aws_region: "ap-northeast-1"
 
 pulumi_env:
-  KUBECONFIG: "{{ kubeconfig }}"
+#  KUBECONFIG: "{{ kubeconfig }}"
   AWS_REGION: "{{ lookup('env', 'AWS_REGION') }}"
   AWS_ACCESS_KEY_ID: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
   AWS_SECRET_ACCESS_KEY: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"

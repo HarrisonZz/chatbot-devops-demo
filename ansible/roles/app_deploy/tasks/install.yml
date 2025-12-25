@@ -24,6 +24,7 @@
   ansible.builtin.shell: |
     set -euo pipefail
     pulumi preview --stack addons-{{ pulumi_stack }}
+  environment: "{{ pulumi_env }}"
   args:
     chdir: "{{ pulumi_workdir }}"
     executable: /bin/bash
