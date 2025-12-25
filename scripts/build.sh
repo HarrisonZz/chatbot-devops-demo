@@ -6,7 +6,7 @@ LOCAL_TEST=0
 APP_DIR="../app"
 APP_NAME="ai-chatbot-app"
 TAG="latest"
-VERSION="v0.3.0"
+VERSION="v0.3.1"
 AWS_REGION="ap-northeast-1"
 # 這裡先預留，等 Pulumi 跑完產生 ECR Repo 後，我們會透過環境變數傳進來
 
