@@ -41,40 +41,40 @@ def deploy(env: str):
     # auth = aws.eks.get_cluster_auth_output(name=cluster_name)    
     cluster_name_o = Output.from_input(cluster_name)
 
-    kubeconfig = Output.all(
-        eks_cluster.endpoint,
-        eks_cluster.certificate_authorities[0].data,
-        cluster_name_o,
-    ).apply(lambda a: json.dumps({
-        "apiVersion": "v1",
-        "kind": "Config",
-        "clusters": [{
-            "name": "eks",
-            "cluster": {
-                "server": a[0],
-                "certificate-authority-data": a[1],
-            },
-        }],
-        "contexts": [{
-            "name": "eks",
-            "context": {"cluster": "eks", "user": "eks-user"},
-        }],
-        "current-context": "eks",
-        "users": [{
-            "name": "eks-user",
-            "user": {
-                "exec": {
-                    "apiVersion": "client.authentication.k8s.io/v1beta1",
-                    "command": "aws",
-                    "args": ["eks", "get-token", "--cluster-name", a[2]],
-                }
-            },
-        }],
-    }))
+    # kubeconfig = Output.all(
+    #     eks_cluster.endpoint,
+    #     eks_cluster.certificate_authorities[0].data,
+    #     cluster_name_o,
+    # ).apply(lambda a: json.dumps({
+    #     "apiVersion": "v1",
+    #     "kind": "Config",
+    #     "clusters": [{
+    #         "name": "eks",
+    #         "cluster": {
+    #             "server": a[0],
+    #             "certificate-authority-data": a[1],
+    #         },
+    #     }],
+    #     "contexts": [{
+    #         "name": "eks",
+    #         "context": {"cluster": "eks", "user": "eks-user"},
+    #     }],
+    #     "current-context": "eks",
+    #     "users": [{
+    #         "name": "eks-user",
+    #         "user": {
+    #             "exec": {
+    #                 "apiVersion": "client.authentication.k8s.io/v1beta1",
+    #                 "command": "aws",
+    #                 "args": ["eks", "get-token", "--cluster-name", a[2]],
+    #             }
+    #         },
+    #     }],
+    # }))
     
     k8s_provider = k8s.Provider("k8s-provider",
         delete_unreachable=True,
-#        kubeconfig=kubeconfig,
+        kubeconfig=kubeconfig,
 #        enable_server_side_apply=False,
     )
     

@@ -179,7 +179,7 @@ class EksAddons(pulumi.ComponentResource):
         )
 
         adot_name = Output.from_input(self.cluster_name).apply(lambda cn: f"{cn}-adot")
-        adot_addon = aws.eks.Addon(adot_addon,
+        adot_addon = aws.eks.Addon(adot_name,
             cluster_name=self.cluster_name,
             addon_name="adot",
             service_account_role_arn=obs_role_arn,
@@ -199,7 +199,7 @@ class EksAddons(pulumi.ComponentResource):
                     "eks.amazonaws.com/role-arn": obs_role_arn # 💡 自動追蹤變化
                 }
             },
-            opts=pulumi.ResourceOptions(depends_on=[obs_ns, adot_addon]) # 確保 Addon 裝好才建 SA
+            opts=self.k8s_opts.merge(pulumi.ResourceOptions(depends_on=[obs_ns, adot_addon])) # 確保 Addon 裝好才建 SA
         )
 
         return obs_role_arn
