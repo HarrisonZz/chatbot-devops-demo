@@ -31,7 +31,7 @@ def deploy(env: str):
     # 取得關鍵 Outputs (這些必須在 Infra Stack 有 export 出來！)
     cluster_name = infra_ref.get_output("clusterName")
     #kubeconfig = infra_ref.get_output("kubeconfig")
-    raw_path = os.getenv("KUBECONFIG", ""~/.kube/config"")
+    raw_path = os.getenv("KUBECONFIG", "~/.kube/config")
     kube_config_path = Path(raw_path).expanduser().resolve()
     print(f"正在讀取 Kubeconfig: {kube_config_path}") # Debug 用
 
