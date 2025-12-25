@@ -22,13 +22,3 @@
   when: 
     - pulumi_action == "up"
     - "'eks' in pulumi_project_list"
-
-- name: Destroy addons stack after EKS (ignore unreachable k8s)
-  ansible.builtin.command:
-    argv: [pulumi, destroy, --stack, "addons-{{ pulumi_stack }}", --yes]
-  args:
-    chdir: "{{ pulumi_workdir }}"  # 依你的實際目錄調整
-  environment: "{{ pulumi_env | combine({'PULUMI_K8S_DELETE_UNREACHABLE': 'true'}) }}"
-  changed_when: false
-  when:
-    - pulumi_action == "destroy"
