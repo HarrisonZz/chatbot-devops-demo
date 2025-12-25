@@ -111,6 +111,7 @@ class EksAddons(pulumi.ComponentResource):
         # 4. 安裝 Helm Chart
         self.alb_release = k8s.helm.v3.Release("alb-controller",
             k8s.helm.v3.ReleaseArgs(
+                name="alb-controller",
                 chart="aws-load-balancer-controller",
                 version=version,
                 namespace="kube-system",
@@ -182,7 +183,7 @@ class EksAddons(pulumi.ComponentResource):
             cluster_name=self.cluster_name,
             addon_name="adot",
             service_account_role_arn=obs_role_arn,
-            resolve_conflicts_on_update="PRESERVE",
+            resolve_conflicts_on_update="OVERWRITE",
             opts=pulumi.ResourceOptions(
                 parent=self,
                 depends_on=[
@@ -232,6 +233,7 @@ class EksAddons(pulumi.ComponentResource):
         # 4. 安裝 Helm Chart
         self.eso_chart = k8s.helm.v3.Release("external-secrets",
             k8s.helm.v3.ReleaseArgs(
+                name="external-secrets",
                 chart="external-secrets",
                 version=version,
                 namespace=ns.metadata.name,
@@ -281,6 +283,7 @@ class EksAddons(pulumi.ComponentResource):
         cert_manager = k8s.helm.v3.Release(
             "cert-manager",
             k8s.helm.v3.ReleaseArgs(
+                name="cert-manager",
                 chart="cert-manager",
                 version="v1.13.0",
                 namespace=ns.metadata["name"],
@@ -317,6 +320,7 @@ class EksAddons(pulumi.ComponentResource):
         # 2. 安裝 Helm Chart
         self.external_dns_chart = k8s.helm.v3.Release("external-dns", 
             k8s.helm.v3.ReleaseArgs(
+                name="external-dns",
                 chart="external-dns",
                 version=version,
                 namespace="kube-system",
