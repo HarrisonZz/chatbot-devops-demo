@@ -140,6 +140,13 @@ class EksAddons(pulumi.ComponentResource):
         """
         建立給 ADOT Collector 或 App Pod 使用的觀測性角色 (CloudWatch + X-Ray)
         """
+        obs_ns = k8s.core.v1.Namespace("observability-ns",
+            metadata=k8s.meta.v1.ObjectMetaArgs(
+                name=namespace,
+            ),
+            opts=self.k8s_opts # 假設這是在 EksAddons 類別內
+        )
+
         obs_policy_json = json.dumps({
             "Version": "2012-10-17",
             "Statement": [
@@ -171,33 +178,28 @@ class EksAddons(pulumi.ComponentResource):
             policy_json=obs_policy_json
         )
 
-        adot_addon = aws.eks.Addon(f"{self.cluster_name}-adot",
+        adot_name = Output.from_input(self.cluster_name).apply(lambda cn: f"{cn}-adot")
+        adot_addon = aws.eks.Addon(adot_addon,
             cluster_name=self.cluster_name,
             addon_name="adot",
             service_account_role_arn=obs_role_arn,
             resolve_conflicts_on_update="PRESERVE",
             opts=pulumi.ResourceOptions(
+                parent=self,
                 depends_on=[cert_manager_release] # 💡 確保 Cert-manager 的 Webhook 已就緒
             )
-        )
-
-        k8s.core.v1.Namespace("observability-ns",
-            metadata=k8s.meta.v1.ObjectMetaArgs(
-                name=namespace,
-            ),
-            opts=pulumi.ResourceOptions(parent=self) # 假設這是在 EksAddons 類別內
         )
 
         k8s.core.v1.ServiceAccount(
             "adot-collector-sa",
             metadata={
-                "name": "adot-collector-sa",
-                "namespace": "observability",
+                "name": service_account,
+                "namespace": namespace,
                 "annotations": {
                     "eks.amazonaws.com/role-arn": obs_role_arn # 💡 自動追蹤變化
                 }
             },
-            opts=pulumi.ResourceOptions(depends_on=[adot_addon]) # 確保 Addon 裝好才建 SA
+            opts=pulumi.ResourceOptions(depends_on=[obs_ns, adot_addon]) # 確保 Addon 裝好才建 SA
         )
 
         return obs_role_arn
