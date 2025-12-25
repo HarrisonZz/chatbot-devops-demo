@@ -34,7 +34,7 @@ def deploy(env: str):
     raw_path = os.getenv("KUBECONFIG", "./kubeconfig")
     kube_config_path = Path(raw_path).expanduser().resolve()
     print(f"正在讀取 Kubeconfig: {kube_config_path}") # Debug 用
-    
+
     try:
         kube_config_content = Path(kube_config_path).read_text()
     except FileNotFoundError:
@@ -162,4 +162,4 @@ def deploy(env: str):
     pulumi.export("certificate_arn", cert.arn)
     
     # 也可以把 kubeconfig 再導出一次，方便 debug
-    pulumi.export("kubeconfig", kubeconfig)
+    # pulumi.export("kubeconfig", kubeconfig)
