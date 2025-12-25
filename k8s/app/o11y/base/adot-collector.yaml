@@ -47,12 +47,12 @@ spec:
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsxray, debug]
+          exporters: [awsxray]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [awsemf, debug]
+          exporters: [awsemf]
         logs:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [awscloudwatchlogs, awsemf, debug]
+          exporters: [awscloudwatchlogs]
