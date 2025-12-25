@@ -25,6 +25,14 @@ spec:
         region: ap-northeast-1
       awsemf:
         region: ap-northeast-1
+        log_group_name: "/aws/eks/ai-chatbot/metrics"
+        log_stream_name: "ai-chatbot-app"
+        metric_declarations:
+          - dimensions: [["service.name"]] 
+            metric_name_selectors: ["is_success", "is_fallback"]
+
+          - dimensions: [["service.name", "model_id"]]
+            metric_name_selectors: ["latency"]
       debug:
         verbosity: normal
         sampling_initial: 5
@@ -41,5 +49,5 @@ spec:
           exporters: [awsemf, debug]
         logs:
           receivers: [otlp]
-          processors: [batch]
-          exporters: [awscloudwatchlogs, debug]
+          processors: [memory_limiter, batch]
+          exporters: [awscloudwatchlogs, awsemf, debug]

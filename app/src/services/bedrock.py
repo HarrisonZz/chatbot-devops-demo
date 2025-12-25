@@ -38,9 +38,10 @@ def call_bedrock(
             inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
         )
         answer = response["output"]["message"]["content"][0]["text"]
-
+        
         logger.info("Bedrock invoked successfully", extra={
             "model_id": model_id,
+            "is_success": 1,
             "latency": time.time() - start_time,
             "status": "success",
         })
@@ -49,6 +50,8 @@ def call_bedrock(
     except Exception as e:
         logger.error("Bedrock invocation failed", extra={
             "error": str(e),
+            "is_success": 0,
+            "status": "error",
             "model_id": model_id,
         })
         return f"Error: {str(e)}"

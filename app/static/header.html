@@ -54,6 +54,12 @@
             border-radius: 4px;
             border: 1px solid #ffcc80;
         }
+
+        .meta-left {
+            text-align: left;
+            display: inline-block;
+            max-width: 920px;
+        }
     </style>
 </head>
 
@@ -68,9 +74,15 @@
             SRE Assessment Demo: Generative AI Chatbot Lifecycle Management
         </p>
 
-        <div class="meta">
-            <span style="margin-right: .25rem;">🏗️</span> Architecture:
-            <span class="badge">AWS Bedrock + ECS Fargate | Infra: Pulumi &amp; Ansible</span>
+        <div class="meta meta-left" style="margin-top:.75rem; line-height:1.6;">
+            <div><span style="margin-right:.25rem;">☁️</span><b>AWS</b>: Bedrock · S3 · CloudFront · EKS · ECR · ALB ·
+                CloudWatch · SSM · ACM · WAF · X-Ray</div>
+            <div><span style="margin-right:.25rem;">🧱</span><b>IaC</b>: Pulumi + Ansible</div>
+            <div><span style="margin-right:.25rem;">🔁</span><b>Flow</b>: Cloudflare DNS → CloudFront(S3) → ALB →
+                EKS(Chat API) → Bedrock</div>
+            <div><span style="margin-right:.25rem;">⚙️</span><b>Ops</b>: Pulumi + Ansible + GitHub Actions + ArgoCD
+            </div>
+            <div><span style="margin-right:.25rem;">🌐</span><b>Extra</b>: Cloudflare DNS</div>
         </div>
     </div>
 </body>
