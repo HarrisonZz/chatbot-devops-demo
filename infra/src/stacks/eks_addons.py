@@ -74,7 +74,7 @@ def deploy(env: str):
     
     k8s_provider = k8s.Provider("k8s-provider",
         delete_unreachable=True,
-        kubeconfig=kubeconfig,
+#        kubeconfig=kubeconfig,
 #        enable_server_side_apply=False,
     )
     
