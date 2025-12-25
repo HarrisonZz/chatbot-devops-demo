@@ -3,8 +3,6 @@ import pulumi_kubernetes as k8s
 import pulumi_aws as aws
 import json
 from pulumi import Output
-import os
-from pathlib import Path
 import pulumi_cloudflare as cloudflare
 from components.compute import EksAddons, CloudflareValidatedCert # 假設憑證類別還在原本位置
 
@@ -30,16 +28,6 @@ def deploy(env: str):
 
     # 取得關鍵 Outputs (這些必須在 Infra Stack 有 export 出來！)
     cluster_name = infra_ref.get_output("clusterName")
-    #kubeconfig = infra_ref.get_output("kubeconfig")
-    raw_path = os.getenv("KUBECONFIG", "~/.kube/config")
-    kube_config_path = Path(raw_path).expanduser().resolve()
-    print(f"正在讀取 Kubeconfig: {kube_config_path}") # Debug 用
-
-    try:
-        kube_config_content = Path(kube_config_path).read_text()
-    except FileNotFoundError:
-        raise FileNotFoundError(f"找不到 Kubeconfig 檔案: {kube_config_path}，請確認 CLI 是否已正確產生該檔案。")
-
     vpc_id = infra_ref.get_output("vpcId")             # ⚠️ 確保 Infra Stack 有 export 這個
     oidc_arn = infra_ref.get_output("oidcProviderArn")
     oidc_url = infra_ref.get_output("oidcProviderUrl") # ⚠️ 確保 Infra Stack 有 export 這個
@@ -50,7 +38,7 @@ def deploy(env: str):
     # 這是避免「刪除死循環」的關鍵：每次執行都使用最新的 kubeconfig 連線
     eks_cluster = aws.eks.get_cluster_output(name=cluster_name)
     # auth = aws.eks.get_cluster_auth_output(name=cluster_name)    
-    # cluster_name_o = Output.from_input(cluster_name)
+    #cluster_name_o = Output.from_input(cluster_name)
 
     # kubeconfig = Output.all(
     #     eks_cluster.endpoint,
@@ -85,7 +73,7 @@ def deploy(env: str):
     
     k8s_provider = k8s.Provider("k8s-provider",
         delete_unreachable=True,
-        kubeconfig=kube_config_content,
+#        kubeconfig=kubeconfig,
 #        enable_server_side_apply=False,
     )
     
@@ -161,5 +149,3 @@ def deploy(env: str):
     pulumi.export("bedrock_role_arn", bedrock_role_arn)
     pulumi.export("certificate_arn", cert.arn)
     
-    # 也可以把 kubeconfig 再導出一次，方便 debug
-    # pulumi.export("kubeconfig", kubeconfig)
