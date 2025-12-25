@@ -178,8 +178,7 @@ class EksAddons(pulumi.ComponentResource):
             policy_json=obs_policy_json
         )
 
-        adot_name = Output.from_input(self.cluster_name).apply(lambda cn: f"{cn}-adot")
-        adot_addon = aws.eks.Addon(adot_name,
+        adot_addon = aws.eks.Addon("eks-adot-addon",
             cluster_name=self.cluster_name,
             addon_name="adot",
             service_account_role_arn=obs_role_arn,
