@@ -187,7 +187,7 @@ class EksAddons(pulumi.ComponentResource):
                 parent=self,
                 depends_on=[
                     cert_manager_release, 
-                    alb_controller_release
+                    self.alb_release
                 ] # 💡 確保 Cert-manager 的 Webhook 已就緒
             )
         )
