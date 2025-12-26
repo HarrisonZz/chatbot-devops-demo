@@ -48,6 +48,10 @@
 
 User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster] -> Service -> Chatbot Pod > ➡️ AWS Bedrock
 
+![chatbot](./docs/images/chatbot_interface.png)
+![chatbot](./docs/images/chatbot_interface_2.png)
+![chatbot](./docs/images/chatbot_interface_3.png)
+
 ### 4) 基礎設施 Infra layer
 ####    1. Amazon EKS
         - 用途 : 核心控制平面，用來託管所有工作負載
@@ -71,6 +75,7 @@ User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster
         - 用途：儲存 Pulumi 需傳遞給服務的變數
 ### 5) EKS 叢集 Platform layer
 ####    1. 持續交付引擎
+![argocd](./docs/images/ArgoCD.png)
         - 核心元件：ArgoCD
             - 用途 : 自動同步、漂移檢測、App of Apps 模式
 ####    2. 機密管理系統 (Secret Management)
@@ -85,13 +90,42 @@ User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster
 ####    5. 可觀測性 (Observability)
         - ADOT (AWS Distro for OpenTelemetry)
 ####    6. Bedrock Integration
-        - 使用了 EKS Pod Identity 來調用 Bedrock
+        - 使用了 EKS Pod Identity 來調用 Bedrock，比 IRSA 更方便簡潔
 ### 6) CI/CD : 
     - 本專案採用 "CI 推送 (Push) + CD 拉取 (Pull)" 的混合模式，並結合 GitHub Actions 與 ArgoCD 來實現全自動化的軟體交付流程
     - CI 階段：持續整合 (GitHub Actions)
       - 當開發者將程式碼 Push 到 main 分支時，GitHub Actions 會觸發 Build & Push 流程
     - CD 階段：持續部署 (ArgoCD)
       - Git Repo 中的 Manifest 檔案被 CI 更新，ArgoCD 就會接手
+### 7) Observability :
+* ADOT (AWS Distro for OpenTelemetry) : 
+- ADOT Gateway 模式
+在架構中扮演 「遙測數據中轉站 (Telemetry Gateway)」 的角色，最後統一送到 AWS 的三大監控服務 (CloudWatch Logs, Metrics, X-Ray)。
+    * Logs (日誌)
+Log 透過 OTLP 直接送到 Collector，再轉送到 CloudWatch Logs
+![log](./docs/images/log.png)
+
+    * Traces (分佈式追蹤)
+
+透過 TraceID 和 Span 能畫出「請求路徑圖」
+![trace](./docs/images/trace.png)
+
+當使用者說「聊天機器人回應很慢」時，你可以去 AWS X-Ray 看服務地圖 (Service Map)
+![traceMap](./docs/images/TraceMap.png)
+
+    * Metrics (指標)
+ADOT Collector 自動收集與發送系統指標
+![metric](./docs/images/metric.png)
+
+根據業務品質設置 SLI，此處為 服務成功率 與 延遲程度p95 作為SLI
+![customSLI](./docs/images/custom_SLI.png)
+
+    * Alarm 告警
+透過自訂 SLI 將 Latency 和 Fallback 率設置告警
+![p95](./docs/images/p95_alarm.png)
+![svc_success](./docs/images/svc_success.png)
+
+
 
 ### 🌟 架構亮點 (Key Highlights for Interview)
 
