@@ -14,11 +14,14 @@
     loop_var: current_project
   vars:
     current_stack_full_name: "{{ current_project }}-{{ pulumi_stack }}"
+  when: 
+    - pulumi_action == "up"
 
 - name: Read Pulumi kubeconfig
   ansible.builtin.include_tasks: get_kubeconfig.yml
   vars:
     current_stack_full_name: "eks-{{ pulumi_stack }}"
   when: 
-    - pulumi_action == "up"
     - "'eks' in pulumi_project_list"
+    - pulumi_action == "up"
+
