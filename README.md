@@ -20,7 +20,8 @@
     * EKS Cluster 的操作與管理權限。
 
 ### 1) 核心操作流程:
-    這個 Repo 的設計哲學是 "CI Driven Infrastructure"。所有的建置與銷毀操作，最標準的方式是透過 GitHub Actions 觸發
+
+這個 Repo 的設計哲學是 "CI Driven Infrastructure"。所有的建置與銷毀操作，最標準的方式是透過 GitHub Actions 觸發
 
 ### 1. 啟動環境 (Provisioning)
 建立 VPC、EKS Cluster、Node Groups 以及基礎 Addons。
@@ -99,15 +100,17 @@ User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster
 | **Security** | **Cert-Manager** | 管理叢集內憑證 (Webhook 驗證) |
 | **Observability**| **ADOT Collector** | 收集 Logs, Metrics, Traces 並發送至 AWS CloudWatch/X-Ray |
 | **AI Auth** | **EKS Pod Identity** | 簡化 Bedrock 調用的身份驗證 |
-
+| **Workload** | **AI Chatbot** | **Bedrock 服務介面化 API**。封裝了與 Amazon Bedrock 的溝通邏輯，透過 Streamlit 提供使用者友善的對話介面。 |
 ---
 
-### 6) CI/CD : 
-    - 本專案採用 "CI 推送 (Push) + CD 拉取 (Pull)" 的混合模式，並結合 GitHub Actions 與 ArgoCD 來實現全自動化的軟體交付流程
-    - CI 階段：持續整合 (GitHub Actions)
-      - 當開發者將程式碼 Push 到 main 分支時，GitHub Actions 會觸發 Build & Push 流程
-    - CD 階段：持續部署 (ArgoCD)
-      - Git Repo 中的 Manifest 檔案被 CI 更新，ArgoCD 就會接手
+### CI/CD : 
+本專案採用 "CI 推送 (Push) + CD 拉取 (Pull)" 的混合模式，並結合 GitHub Actions 與 ArgoCD 來實現全自動化的軟體交付流程
+**CI 階段：持續整合 (GitHub Actions)**
+當開發者將程式碼 Push 到 main 分支時，GitHub Actions 會觸發 Build & Push 流程
+
+**CD 階段：持續部署 (ArgoCD)**
+Git Repo 中的 Manifest 檔案被 CI 更新，ArgoCD 就會接手
+
 ## 📊 可觀測性 (Observability)
 
 本專案採用 **ADOT (AWS Distro for OpenTelemetry)** 建構遙測數據中轉站 (Telemetry Gateway)。
