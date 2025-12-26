@@ -12,6 +12,7 @@ on:
           - up
           - destroy
           - artifact
+          - deploy
 
 permissions:
   id-token: write
@@ -33,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           case "${ACTION}" in
-            up|destroy|artifact) echo "ACTION=${ACTION}" ;;
+            up|destroy|artifact|deploy) echo "ACTION=${ACTION}" ;;
             *) echo "Invalid action: ${ACTION}" >&2; exit 1 ;;
           esac
 
@@ -116,6 +117,21 @@ jobs:
           echo "🚀 Starting Build Script..."
           chmod +x ./build.sh
           ./build.sh
+          
+      # =========================
+      # Deploy path
+      # =========================
+      
+      - name: Deploy Applications
+        if: ${{ inputs.action == 'deploy' }}
+        run: |
+          set -euo pipefail
+          docker exec ansible-platform-runner \
+          bash -lc "
+            ansible-playbook playbooks/platform_up.yml \
+            -t app \
+            -e pulumi_action="deploy"
+          "
 
       # =========================
       # DESTROY path
