@@ -19,8 +19,7 @@
     * 建立 Pulumi 定義之 AWS 資源的 API 權限。
     * EKS Cluster 的操作與管理權限。
 
-### 1) 核心操作流程:
-
+### 核心操作流程:
 這個 Repo 的設計哲學是 "CI Driven Infrastructure"。所有的建置與銷毀操作，最標準的方式是透過 GitHub Actions 觸發
 
 ### 1. 啟動環境 (Provisioning)
@@ -30,7 +29,6 @@
 3.  點擊 **Run workflow**。
 4.  在 Action 下拉選單選擇：`up` 並執行。
 
-####    2. 連線與驗證 (Access & Verify)
 ### 2. 連線與驗證 (Access & Verify)
 環境建立完成後，設定本機存取權限：
 1.  更新 kubeconfig：
@@ -39,7 +37,7 @@
     ```
 2.  **設定權限**：建立 Access Entry 並綁定 Admin Policy (可透過修改 Pulumi 程式碼或 AWS CLI 手動加入)。
 
-####    3. 部署應用程式 (Deploy Apps via GitOps)
+#### 3. 部署應用程式 (Deploy Apps via GitOps)
 1.  **上傳靜態資源**：
     * 在 Actions 頁面選擇 `artifact` 並執行 (上傳至 S3/CloudFront)。
 2.  **觸發部署**：
@@ -84,7 +82,6 @@ p.s 如果清除 Addons 時過久或超時，可以手動刪除 ingress (ALB) �
 * `scripts/` - **輔助工具**：Chatbot 服務容器化相關的 Helper Scripts。
 
 ---
-
 
 ### Chatbot 服務架構圖
 ![service](./docs/images/service_arch.png)
@@ -155,8 +152,6 @@ ADOT Collector 自動收集與發送系統指標
 透過自訂 SLI 將 Latency 和 Fallback 率設置告警
 ![p95](./docs/images/p95_alarm.png)
 ![svc_success](./docs/images/svc_success.png)
-
-
 
 ---
 
