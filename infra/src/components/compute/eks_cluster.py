@@ -67,12 +67,33 @@ class EksCluster(pulumi.ComponentResource):
             ),
             access_config=aws.eks.ClusterAccessConfigArgs(
                 authentication_mode="API_AND_CONFIG_MAP", # 兼容舊模式與新 API 模式
-                bootstrap_cluster_creator_admin_permissions=True, # 確保建立者(你)仍有權限
+                bootstrap_cluster_creator_admin_permissions=False, # 確保建立者(你)仍有權限
             ),
             tags=tags,
             opts=parent,
         )
+        
+        github_role_arn = "arn:aws:iam::533267110761:role/github-actions-oidc-role"
 
+        # 2. 建立 Access Entry (授權該 Role 進門)
+        access_entry = aws.eks.AccessEntry(f"{name}-github-actions-entry",
+            cluster_name=cluster.name,
+            principal_arn=github_role_arn,
+            type="STANDARD",
+            opts=pulumi.ResourceOptions(parent=self, depends_on=[cluster], delete_before_replace=True)
+        )
+
+        # 3. 關聯 Admin 策略 (給予進門後的管理權限)
+        aws.eks.AccessPolicyAssociation(f"{name}-github-actions-policy",
+            cluster_name=cluster.name,
+            principal_arn=github_role_arn,
+            policy_arn="arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy",
+            access_scope=aws.eks.AccessPolicyAssociationAccessScopeArgs(
+                type="cluster",
+            ),
+            opts=pulumi.ResourceOptions(parent=self, depends_on=[access_entry])
+        )
+        
         # 4) Node IAM Role
         node_role = aws.iam.Role(
             f"{name}-node-role",
@@ -176,27 +197,6 @@ class EksCluster(pulumi.ComponentResource):
                     "user": {"token": a[2]},
                 }],
             }
-        )
-
-        github_role_arn = "arn:aws:iam::533267110761:role/github-actions-oidc-role"
-
-        # 2. 建立 Access Entry (授權該 Role 進門)
-        access_entry = aws.eks.AccessEntry(f"{name}-github-actions-entry",
-            cluster_name=cluster.name,
-            principal_arn=github_role_arn,
-            type="STANDARD",
-            opts=pulumi.ResourceOptions(parent=self, depends_on=[cluster], delete_before_replace=True)
-        )
-
-        # 3. 關聯 Admin 策略 (給予進門後的管理權限)
-        aws.eks.AccessPolicyAssociation(f"{name}-github-actions-policy",
-            cluster_name=cluster.name,
-            principal_arn=github_role_arn,
-            policy_arn="arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy",
-            access_scope=aws.eks.AccessPolicyAssociationAccessScopeArgs(
-                type="cluster",
-            ),
-            opts=pulumi.ResourceOptions(parent=self, depends_on=[access_entry])
         )
 
         self.cluster_name = cluster.name

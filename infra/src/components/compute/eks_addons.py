@@ -85,6 +85,9 @@ class EksAddons(pulumi.ComponentResource):
         """
         安裝 AWS Load Balancer Controller
         """
+
+        cm_release = self.install_cert_manager()
+
         # 1. 讀取 Policy 文件 (確保路徑正確，建議放在專案根目錄的 policies 資料夾)
         # 這裡假設檔案結構為: project_root/pkg/compute/eks_addons.py，所以往上兩層找到 policies
         policy_path = Path(__file__).resolve().parents[2] / "policies" / "alb_controller_iam_policy.json"
@@ -133,7 +136,7 @@ class EksAddons(pulumi.ComponentResource):
                 timeout=900,
             ),
             # 確保 SA 建立後才安裝 Helm
-            opts=self.k8s_opts.merge(ResourceOptions(depends_on=[alb_sa])),
+            opts=self.k8s_opts.merge(ResourceOptions(depends_on=[alb_sa, cm_release])),
         )
         return role_arn
     
@@ -269,6 +272,9 @@ class EksAddons(pulumi.ComponentResource):
         return role_arn
     
     def install_cert_manager(self):
+
+        if hasattr(self, 'cert_manager_release'):
+            return self.cert_manager_release
         """
         使用 Helm Release 安裝 Cert-manager (ADOT 的強制前置組件)
         """
@@ -299,6 +305,7 @@ class EksAddons(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(parent=ns, depends_on=[ns])
         )
+        self.cert_manager_release = cert_manager
         return cert_manager
 
     def install_external_dns(self, api_token: Input[str], domain_filter: str, version="1.14.3"):
