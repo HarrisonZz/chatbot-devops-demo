@@ -1,11 +1,14 @@
 ---
 
-  - name: Install Python dependencies
+  - name: Ensure Python kubernetes library is installed
     ansible.builtin.pip:
-      requirements: "{{ pulumi_requirements }}"
-      extra_args: "--no-cache-dir"
-    args:
-      chdir: "{{ pulumi_workdir }}"
+      name: kubernetes
+      state: present
+      # 💡 強制指定使用 pip3，通常能對應到系統預設的 python3
+      executable: pip3 
+    # 確保這是在執行 Ansible 的那台機器 (你的容器) 上執行，而不是遠端目標
+    delegate_to: localhost 
+    run_once: true
 
   - name: Check if kubeconfig file exists
     stat:
