@@ -8,6 +8,9 @@ kubeconfig: "~/.kube/config"
 kubecontext: ""
 aws_profile: "{{ lookup('env', 'AWS_PROFILE') | default('default', true) }}"
 
+pulumi_workdir: "{{ playbook_dir }}/../../infra"
+pulumi_requirements: "requirements.txt"
+
 # 是否強制檢查節點狀態？(建議開啟，確保部署前叢集是健康的)
 require_nodes_ready: true
 
@@ -42,7 +45,6 @@ argocd_service_type: "ClusterIP"
 
 pulumi_access_token: "{{ lookup('env', 'PULUMI_ACCESS_TOKEN') | trim | regex_replace('\r', '') }}"
 
-pulumi_workdir: "{{ playbook_dir }}/../../infra"
 pulumi_stack: dev
 # 高可用模式 (HA)：
 # - true: 啟用 Redis HA, 多個 Replica (生產環境用)
