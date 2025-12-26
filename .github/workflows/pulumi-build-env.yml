@@ -118,7 +118,7 @@ jobs:
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner bash -lc "
-            ansible-playbook playbooks/platform_destroy.yml -t app
+            ansible-playbook playbooks/platform_destroy.yml -t app -e allow_destroy=true
           "
       
       - name: Destroy Platform Addons (Infra) via Ansible
@@ -126,7 +126,7 @@ jobs:
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner bash -lc "
-            ansible-playbook playbooks/platform_destroy.yml -t infra
+            ansible-playbook playbooks/platform_destroy.yml -t infra -e allow_destroy=true
           "    
 
       - name: Cleanup container
