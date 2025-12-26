@@ -3,4 +3,8 @@
   hosts: localhost
   connection: local
   roles:
+    - role: infra_provision
+      vars:
+        pulumi_action: artifact
+
     - role: static_upload
