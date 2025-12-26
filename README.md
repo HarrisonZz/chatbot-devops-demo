@@ -53,6 +53,7 @@
 3.  在 Action 下拉選單選擇：`destroy` 並執行。 
 
 p.s 如果清除 Addons 時過久或超時，可以手動刪除 ingress (ALB) 後，直接執行刪除 Infra，但 Infra 刪除成功後須更新 Addon 的 state
+    
     ```bash
     # 1. 匯出目前的壞掉的 State
     pulumi stack export --stack addons-dev > state.json
