@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Platform Lifecycle Management
 
 on:
   workflow_dispatch:
@@ -65,6 +65,10 @@ jobs:
             pulumi-build-env:${IMAGE_TAG} \
             tail -f /dev/null
 
+      # =========================
+      # Infra build path
+      # =========================
+
       - name: Verify the Container env for image build
         if: ${{ inputs.action == 'up' }}
         run: |
@@ -89,7 +93,11 @@ jobs:
           bash -lc "
             ansible-playbook playbooks/platform_up.yml -t app --skip-tags preflight
           "
-          
+
+      # =========================
+      # Artifact upload path
+      # =========================
+      
       - name: Upload static assets via Ansible
         if: ${{ inputs.action == 'artifact' }}
         run: |
@@ -111,7 +119,6 @@ jobs:
 
       # =========================
       # DESTROY path
-      # 重要：建議先 app 再 infra
       # =========================
       - name: Destroy Platform Addons (app) via Ansible
         if: ${{ inputs.action == 'destroy' }}
