@@ -1,0 +1,11 @@
+---
+
+- name: Bootstrap ArgoCD Resources (Projects & Apps)
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig | default('~/.kube/config') }}"
+    src: "{{ item }}"  # 👈 直接指定檔案路徑，讓模組自己去讀
+    state: present
+  with_fileglob:
+    # 👇 一次把所有要佈署的檔案路徑都列出來
+    - "../k8s/argocd/projects/*.yaml"
+    - "../k8s/argocd/root/*.yaml"
