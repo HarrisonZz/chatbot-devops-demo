@@ -1,4 +1,17 @@
 ---
+
+  - name: Update Kubeconfig with Specific Profile
+    ansible.builtin.command: >-
+      aws eks update-kubeconfig 
+      --name {{ eks_cluster_name }} 
+      --region {{ aws_region }}
+      --kubeconfig {{ kubeconfig | expanduser }}
+    environment: "{{ pulumi_env | default({}) }}"
+    vars:
+      # 確保這裡使用系統的 AWS CLI，不受 Python 環境影響
+      ansible_python_interpreter: "/usr/bin/python3" 
+    when: not kubeconfig_check.stat.exists
+
   - name: Delete ArgoCD Applications (stop GitOps reconciliation)
     kubernetes.core.k8s:
       kubeconfig: "{{ kubeconfig }}"
