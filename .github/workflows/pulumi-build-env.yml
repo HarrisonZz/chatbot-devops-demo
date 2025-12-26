@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: '執行動作 (up 或 destroy)'
+        description: '執行動作'
         required: true
         default: 'up'
         type: choice
         options:
           - up
           - destroy
+          - artifact
 
 permissions:
   id-token: write
@@ -90,7 +91,7 @@ jobs:
           "
           
       - name: Upload static assets via Ansible
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ inputs.action == 'artifact' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -98,7 +99,7 @@ jobs:
             ansible-playbook playbooks/upload_static.yml
           "
       - name: Build Application Artifacts
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ inputs.action == 'artifact' }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         working-directory: scripts
