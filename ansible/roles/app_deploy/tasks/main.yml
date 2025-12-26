@@ -20,6 +20,11 @@
   ansible.builtin.import_tasks: destroy.yml
   environment: "{{ pulumi_env }}"
   when: pulumi_action == 'destroy'
+
+- name: destroy stack resources
+  ansible.builtin.import_tasks: app_deploy.yml
+  environment: "{{ pulumi_env }}"
+  when: pulumi_action == 'deploy'
 # - name: Configure ESO stores & externalsecrets
 #   ansible.builtin.import_tasks: configure.yml
 #   tags: [configure]
