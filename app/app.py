@@ -5,6 +5,7 @@ from src.services.bedrock import get_bedrock_client, call_bedrock
 from src.ui.layout import configure_page, render_header
 from src.ui.sidebar import render_sidebar
 from opentelemetry import trace
+from opentelemetry.context import Context
 from src.ui.chat import init_session, render_history, handle_input
 
 cfg = AppConfig()
@@ -25,7 +26,7 @@ render_history(avatars.user_avatar, avatars.bot_avatar)
 
 def on_user_prompt(prompt: str) -> str:
 
-    with tracer.start_as_current_span("generate_response") as span:
+    with tracer.start_as_current_span("generate_response", context=Context()) as span:
         
         span.set_attribute("gen_ai.prompt", prompt)
         return call_bedrock(
