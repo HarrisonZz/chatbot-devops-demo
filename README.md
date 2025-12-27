@@ -5,7 +5,7 @@
 ## 🏗️ 系統架構 (Architecture)
 
 ### Service Architecture
-使用者流量經過 Cloudflare DNS 解析後，由 AWS ALB 轉發至 EKS 內部的 Chatbot Pod，並由後端調用 Amazon Bedrock 進行 AI 推論。
+使用者流量經由 Cloudflare Proxy (CDN/WAF) 接入，經過安全過濾與快取後，轉發至 AWS ALB，再路由至 EKS 內部的 Chatbot Pod，最終由後端調用 Amazon Bedrock 進行 AI 推論。
 
 ---
 
@@ -104,7 +104,7 @@ User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster
 | **Amazon ECR** | 儲存 Chatbot 服務的 Docker Image |
 | **Amazon VPC** | 建構隔離且安全的網路環境 |
 | **AWS ALB** | 透過 Load Balancer Controller 自動建立，負責 Ingress 流量轉發 |
-| **CloudFront** | CDN 服務，快取靜態資源 |
+| **CloudFront** | CDN 服務與 WAF，負責快取靜態資源並提供邊緣安全防護 |
 | **AWS IAM** | 權限管理 (整合 OIDC 與 IRSA) |
 | **Amazon S3** | 儲存靜態網頁素材 |
 | **Amazon Bedrock** | AI 基礎模型服務 (Claude/Titan) |
