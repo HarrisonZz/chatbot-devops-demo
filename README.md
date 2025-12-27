@@ -87,6 +87,8 @@ p.s 如果清除 Addons 時過久或超時，可以手動刪除 ingress (ALB) �
 ### Chatbot 服務架構圖
 ![service](./docs/images/service_arch.png)
 
+####  My URL : https://dev.hrscyj.uk 
+
 User (Chrome) ➡️ Cloudflare DNS ➡️ AWS ALB (Ingress) ➡️ [EKS Cluster] -> Service -> Chatbot Pod > ➡️ AWS Bedrock
 
 ![chatbot](./docs/images/chatbot_interface.png)
