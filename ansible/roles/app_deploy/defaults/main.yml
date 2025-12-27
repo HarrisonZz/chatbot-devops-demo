@@ -53,9 +53,9 @@ argocd_ha_enabled: false
 
 argocd_apps_to_delete:
   - root-dev
-#  - ai-chatbot-dev
-#  - platform-external-secrets
-#  - eks-observability-stack
+  - ai-chatbot-dev
+  - platform-external-secrets
+  - eks-observability-stack
 
 # ----------------------------
 # Reloader (Stakater)
