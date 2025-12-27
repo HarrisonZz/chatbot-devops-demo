@@ -26,8 +26,29 @@
       # 確保這裡使用系統的 AWS CLI，不受 Python 環境影響
       ansible_python_interpreter: "/usr/bin/python3" 
     when: not kubeconfig_check.stat.exists
+  
+  - name: Delete Root App (Stop GitOps Reconciliation)
+  # 刪除 root-dev，這時候子應用會變成「孤兒」，但還活著
+    kubernetes.core.k8s:
+      kubeconfig: "{{ kubeconfig }}"
+      state: absent
+      api_version: argoproj.io/v1alpha1
+      kind: Application
+      namespace: "{{ argocd_namespace }}"
+      name: root-dev
 
-  - name: Delete ArgoCD Applications (stop GitOps reconciliation)
+  - name: Delete Chatbot Workload
+    kubernetes.core.k8s:
+      kubeconfig: "{{ kubeconfig }}"
+      state: absent
+      api_version: argoproj.io/v1alpha1
+      kind: Application
+      namespace: "{{ argocd_namespace }}"
+      name: ai-chatbot-dev
+      wait: yes
+      wait_timeout: 600
+
+  - name: Delete Infrastructure Addons
     kubernetes.core.k8s:
       kubeconfig: "{{ kubeconfig }}"
       state: absent
@@ -35,8 +56,10 @@
       kind: Application
       namespace: "{{ argocd_namespace }}"
       name: "{{ item }}"
-    loop: "{{ argocd_apps_to_delete }}"
-    ignore_errors: false
+      wait: yes           # 建議也等待，確保乾淨
+    loop:
+      - platform-external-secrets
+      - eks-observability-stack
 
   - name: Destroy [addons-{{ pulumi_stack }}]
     ansible.builtin.command: >-
