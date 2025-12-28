@@ -52,25 +52,7 @@
 2.  選擇 Workflow: **"Platform Lifecycle Management"**。
 3.  在 Action 下拉選單選擇：`destroy` 並執行。 
 
-p.s 如果清除 Addons 時過久或超時，可以手動刪除 ingress (ALB) 後，直接執行刪除 Infra，但 Infra 刪除成功後須更新 Addon 的 state
-    
-    ```bash
-    # 1. 匯出目前的壞掉的 State
-    pulumi stack export --stack addons-dev > state.json
-
-    # 2. (關鍵步驟) 使用 jq 清空資源列表
-    # 這會把 resources 變成空陣列 []，但保留 Stack 的 config 和版本資訊
-    jq '.deployment.resources = []' state.json > state_clean.json
-
-    # 3. 把乾淨的 State 匯入回去
-    pulumi stack import --stack addons-dev < state_clean.json
-
-    # 4. 驗證 (應該要看到 Resources: 0)
-    pulumi stack --stack addons-dev
-
-    # 5. 刪除暫存檔 (選做)
-    rm state.json state_clean.json
-    ```
+> If destroy is slow or stuck (e.g., ALB/Ingress finalizers), refer to [`docs/troubleshooting.md`](docs/troubleshooting.md).
 
 ---
 
