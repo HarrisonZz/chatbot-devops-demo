@@ -1,10 +1,11 @@
 ---
+- name: Login via infra_provision role task
+  ansible.builtin.include_role:
+    name: infra_provision
+    tasks_from: login  # 關鍵：指定只跑 login.yml，忽略 main.yml
+  
 - name: Upload Staic Resources
   hosts: localhost
   connection: local
   roles:
-    - role: infra_provision
-      vars:
-        pulumi_action: artifact
-
     - role: static_upload
