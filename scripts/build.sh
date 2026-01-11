@@ -5,10 +5,13 @@ LOCAL_TEST=0
 # --- 設定變數 ---
 APP_DIR="../app"
 APP_NAME="ai-chatbot-app"
-TAG="latest"
-VERSION="v0.3.2"
 AWS_REGION="ap-northeast-1"
 # 這裡先預留，等 Pulumi 跑完產生 ECR Repo 後，我們會透過環境變數傳進來
+
+COMMIT_SHA="${GITHUB_SHA:-$(git rev-parse HEAD)}"
+SHORT_SHA="$(echo "${COMMIT_SHA}" | cut -c1-7)"
+VERSION="${VERSION:-$SHORT_SHA}"
+TAG="latest"
 
 echo "🚀 Starting build process for ${APP_NAME}:${TAG}..."
 
