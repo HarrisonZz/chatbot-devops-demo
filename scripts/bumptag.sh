@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-FILE="../k8s/app/ai-chatbot/overlays/dev/kustomization.yaml"
+FILE="k8s/app/ai-chatbot/overlays/dev/kustomization.yaml"
 IMG="533267110761.dkr.ecr.ap-northeast-1.amazonaws.com/ai-chatbot-app-dev"
 
 # 1) tag = commit（優先用 CI 的 GITHUB_SHA，否則用本地 git）
