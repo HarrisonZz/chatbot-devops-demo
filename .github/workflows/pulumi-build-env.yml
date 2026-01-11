@@ -21,7 +21,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -30,10 +30,14 @@ jobs:
       AWS_REGION: ap-northeast-1
       ROLE_ARN: arn:aws:iam::533267110761:role/github-actions-oidc-role
       IMAGE_TAG: local
-      ACTION: ${{ inputs.action }}
+      # push 事件沒有 inputs.action，所以 push 時預設走 artifact（build+push image + bump gitops）
+      ACTION: ${{ github.event_name == 'push' && 'artifact' || inputs.action }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
 
       - name: Validate action
         run: |
@@ -76,23 +80,25 @@ jobs:
       # =========================
 
       - name: Verify the Container env for image build
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ env.ACTION == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
             ansible-playbook playbooks/bootstrap.yml
           "
+
       - name: Provision Platform (infra) via Ansible
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ env.ACTION == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
             ansible-playbook playbooks/platform_up.yml -t infra
           "
+
       - name: Provision Platform Addons via Ansible
-        if: ${{ inputs.action == 'up' }}
+        if: ${{ env.ACTION == 'up' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
@@ -103,17 +109,18 @@ jobs:
       # =========================
       # Artifact upload path
       # =========================
-      
+
       - name: Upload static assets via Ansible
-        if: ${{ inputs.action == 'artifact' }}
+        if: ${{ env.ACTION == 'artifact' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
             ansible-playbook playbooks/upload_static.yml
           "
+
       - name: Build Application Artifacts
-        if: ${{ inputs.action == 'artifact' }}
+        if: ${{ env.ACTION == 'artifact' }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
         working-directory: scripts
@@ -122,40 +129,65 @@ jobs:
           echo "🚀 Starting Build Script..."
           chmod +x ./build.sh
           ./build.sh
-          
+
+      - name: Bump GitOps newTag and push commit
+        if: ${{ env.ACTION == 'artifact' }}
+        run: |
+          set -euo pipefail
+
+          echo "🚀 Running dumptag.sh to update kustomization newTag..."
+          chmod +x scripts/dumptag.sh
+          scripts/dumptag.sh
+
+          echo "🧾 Preparing git commit..."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 只 commit 真的有變更時（避免空 commit 失敗）
+          if git diff --quiet; then
+            echo "No changes detected. Skip commit."
+            exit 0
+          fi
+
+          TAG="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          git add k8s/app/ai-chatbot/overlays/dev/kustomization.yaml
+          git commit -m "chore(gitops): bump dev image to ${TAG} [skip ci]"
+          git push
+
       # =========================
       # Deploy path
       # =========================
-      
+
       - name: Deploy Applications
-        if: ${{ inputs.action == 'deploy' }}
+        if: ${{ env.ACTION == 'deploy' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner \
           bash -lc "
             ansible-playbook playbooks/platform_up.yml \
             -t app \
-            -e pulumi_action="deploy"
+            -e pulumi_action=deploy
           "
 
       # =========================
       # DESTROY path
       # =========================
+
       - name: Destroy Platform Addons (app) via Ansible
-        if: ${{ inputs.action == 'destroy' }}
+        if: ${{ env.ACTION == 'destroy' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner bash -lc "
             ansible-playbook playbooks/platform_destroy.yml -t app -e allow_destroy=true
           "
-      
+
       - name: Destroy Platform Addons (Infra) via Ansible
-        if: ${{ inputs.action == 'destroy' }}
+        if: ${{ env.ACTION == 'destroy' }}
         run: |
           set -euo pipefail
           docker exec ansible-platform-runner bash -lc "
             ansible-playbook playbooks/platform_destroy.yml -t infra -e allow_destroy=true
-          "    
+          "
 
       - name: Cleanup container
         if: always()
