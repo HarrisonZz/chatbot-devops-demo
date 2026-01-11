@@ -135,9 +135,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "🚀 Running dumptag.sh to update kustomization newTag..."
-          chmod +x scripts/dumptag.sh
-          scripts/dumptag.sh
+          echo "🚀 Running bumptag.sh to update kustomization newTag..."
+          chmod +x scripts/bumptag.sh
+          scripts/bumptag.sh
 
           echo "🧾 Preparing git commit..."
           git config user.name "github-actions[bot]"
