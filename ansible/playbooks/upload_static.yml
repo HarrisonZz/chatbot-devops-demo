@@ -1,11 +1,17 @@
 ---
-- name: Login via infra_provision role task
-  ansible.builtin.include_role:
-    name: infra_provision
-    tasks_from: login  # 關鍵：指定只跑 login.yml，忽略 main.yml
-  
 - name: Upload Staic Resources
   hosts: localhost
   connection: local
-  roles:
-    - role: static_upload
+  gather_facts: false # 不需要蒐集系統資訊，加速執行
+
+  tasks:
+    # 1. 精準呼叫：只借用 infra_provision 的 login 功能
+    - name: Login to Pulumi (Reuse logic)
+      ansible.builtin.include_role:
+        name: infra_provision
+        tasks_from: login
+
+    # 2. 執行原本 static_upload 的工作
+    - name: Run Static Upload Role
+      ansible.builtin.include_role:
+        name: static_upload
