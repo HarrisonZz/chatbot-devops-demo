@@ -4,6 +4,7 @@ metadata:
   name: ai-chatbot-app
   annotations:
     reloader.stakater.com/auto: "true"
+    argocd.argoproj.io/sync-wave: "10"
   labels:
     app: ai-chatbot
     app.kubernetes.io/name: ai-chatbot
@@ -24,7 +25,6 @@ spec:
       labels:
         app: ai-chatbot
       annotations:
-        argocd.argoproj.io/sync-wave: "10"
         instrumentation.opentelemetry.io/inject-python: "adot-instrumentation"
     spec:
       # 🚨 綁定身份：讓 Pod 擁有 Bedrock 權限
