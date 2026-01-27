@@ -18,10 +18,10 @@ preview-all-dev:
 	pulumi -s eks-dev config set eks:netRef HarrisonZz-org/ai-chatbot-infra/network-dev
 	pulumi --cwd ./infra -s eks-dev preview
 
-destroy-edge-dev:
+destroy-eks-dev:
 	pulumi --cwd ./infra -s eks-dev destroy
 
-destroy-edge-dev:
+destroy-registry-dev:
 	pulumi --cwd ./infra -s registry-dev destroy
 	
 destroy-edge-dev:	
