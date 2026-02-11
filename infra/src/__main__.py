@@ -1,4 +1,4 @@
-from stacks import edge, registry, eks, network, eks_addons
+from stacks import edge, registry, eks, network, eks_addons, storage
 import pulumi
 
 ROUTER = {
@@ -6,7 +6,8 @@ ROUTER = {
   "registry": registry.deploy,
   "network": network.deploy,
   "eks": eks.deploy,
-  "addons": eks_addons.deploy
+  "addons": eks_addons.deploy,
+  "storage": storage.deploy
 }
 
 ALLOWED_ENVS = {"dev", "test", "prod"}
