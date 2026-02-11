@@ -23,6 +23,14 @@ class AppConfig:
 
     assets_base_url: str = field(default_factory=get_url_from_env)
 
+    # 新增 DynamoDB 配置
+    dynamodb_table_name: str = field(
+        default_factory=lambda: os.getenv("DYNAMODB_TABLE_NAME", "")
+    )
+
+    # 會話列表顯示數量
+    session_list_limit: int = 10
+
     @property
     def css_url(self) -> str:
         return f"{self.assets_base_url}/style.css"
