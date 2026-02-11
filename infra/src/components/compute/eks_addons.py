@@ -368,7 +368,7 @@ class EksAddons(pulumi.ComponentResource):
 
     def install_bedrock_role(self, service_account: str = "ai-chatbot-sa", namespace: str = "default"):
         """
-        安裝 Bedrock IAM Role 並使用 EKS Pod Identity 綁定
+        安裝 Bedrock + DynamoDB IAM Role 並使用 EKS Pod Identity 綁定
         """
         bedrock_policy_json = json.dumps({
             "Version": "2012-10-17",
@@ -381,6 +381,20 @@ class EksAddons(pulumi.ComponentResource):
                         "bedrock:ListFoundationModels"
                     ],
                     "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "dynamodb:PutItem",
+                        "dynamodb:GetItem",
+                        "dynamodb:Query",
+                        "dynamodb:Scan",
+                        "dynamodb:UpdateItem"
+                    ],
+                    "Resource": [
+                        "arn:aws:dynamodb:*:*:table/ai-chatbot-conversations-*",
+                        "arn:aws:dynamodb:*:*:table/ai-chatbot-conversations-*/index/*"
+                    ]
                 }
             ]
         })
