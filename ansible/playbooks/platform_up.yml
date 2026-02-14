@@ -13,8 +13,5 @@
       vars:
         pulumi_action: up
       tags: ["infra"]
-#    - ecr_login
-#    - build_push_image
-    - role: app_deploy     # only if EKS
+    - role: app_deploy
       tags: ["app"]
-#    - smoke_test
