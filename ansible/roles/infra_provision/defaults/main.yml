@@ -11,6 +11,7 @@ pulumi_project_list:
   - edge
   - network
   - eks
+  - storage
 
 # --- 核心設定 ---
 pulumi_action: up
