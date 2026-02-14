@@ -65,9 +65,10 @@ def deploy(env: str):
     #     domain_filter=cf_domain
     # )
 
-    # 3. Exports
+    # 3. Exports（addons stack 依賴 clusterName, vpcId, oidc*）
     pulumi.export("env", env)
     pulumi.export("clusterName", eks.cluster_name)
+    pulumi.export("vpcId", vpc_id)
     pulumi.export("clusterArn", eks.cluster_arn)
     pulumi.export("nodeGroupName", eks.nodegroup_name)
     
