@@ -25,11 +25,3 @@
   ansible.builtin.import_tasks: app_deploy.yml
   environment: "{{ pulumi_env }}"
   when: pulumi_action == 'deploy'
-# - name: Configure ESO stores & externalsecrets
-#   ansible.builtin.import_tasks: configure.yml
-#   tags: [configure]
-
-# - name: Verify end-to-end
-#   when: verify_enabled | bool
-#   ansible.builtin.import_tasks: verify.yml
-#   tags: [verify]

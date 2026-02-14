@@ -4,9 +4,16 @@
   kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
+    state: present
   loop:
     - { name: argo, url: "https://argoproj.github.io/argo-helm" }
     - { name: stakater, url: "https://stakater.github.io/stakater-charts" }
+  become: false
+
+- name: Update Helm repo cache
+  ansible.builtin.command: helm repo update
+  changed_when: false
+  become: false
 
 - name: Check if kubeconfig file exists
   ansible.builtin.stat:
@@ -63,18 +70,6 @@
     - "{{ argocd_namespace }}"
     - "{{ reloader_namespace }}"
 
-- name: Add Argo Helm repo
-  kubernetes.core.helm_repository:
-    name: argo
-    repo_url: https://argoproj.github.io/argo-helm
-    state: present
-  # ⚠️ 很重要：避免你其他 task 有 become 造成 repo 加到不同 HOME
-  become: false
-
-- name: Update Helm repo cache
-  ansible.builtin.command: helm repo update
-  changed_when: false
-  become: false
 
 - name: Install ArgoCD
   kubernetes.core.helm:
@@ -104,17 +99,6 @@
           enabled: false
   when: argocd_enabled | default(true)
 
-- name: Add Stakater Helm repo
-  kubernetes.core.helm_repository:
-    name: "{{ reloader_repo_name | default('stakater') }}"
-    repo_url: "{{ reloader_repo_url | default('https://stakater.github.io/stakater-charts') }}"
-    state: present
-  become: false
-
-- name: Update Helm repo cache
-  ansible.builtin.command: helm repo update
-  changed_when: false
-  become: false
 
 - name: Install Reloader
   kubernetes.core.helm:
